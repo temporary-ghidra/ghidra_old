@@ -25,6 +25,7 @@ import ghidra.pcode.memstate.MemoryState;
 import ghidra.pcode.memstate.UniqueMemoryBank;
 import ghidra.pcode.opbehavior.*;
 import ghidra.pcode.pcoderaw.PcodeOpRaw;
+import ghidra.pcode.utils.InjectionUtils;
 import ghidra.program.disassemble.Disassembler;
 import ghidra.program.model.address.*;
 import ghidra.program.model.data.PointerDataType;
@@ -211,7 +212,15 @@ public class Emulate {
 			pseudoInstruction = lastPseudoInstructionBlock.getInstructionAt(addr);
 			if (pseudoInstruction != null) {
 				instruction_length = getInstructionLength(pseudoInstruction);
-				return pseudoInstruction.getPcode(false);
+				PcodeOp[] mainPcode = pseudoInstruction.getPcode(false);
+				PcodeOp[] injectionPcode = InjectionUtils.getEntryPcodeOps(pseudoInstruction);
+				if (injectionPcode != null) {
+					PcodeOp[] arr = new PcodeOp[injectionPcode.length + mainPcode.length];
+					System.arraycopy(injectionPcode, 0, arr, 0, injectionPcode.length);
+					System.arraycopy(mainPcode, 0, arr, injectionPcode.length, mainPcode.length);
+					return arr;
+				}
+				return mainPcode;
 			}
 
 			InstructionError error = lastPseudoInstructionBlock.getInstructionConflict();
@@ -228,7 +237,15 @@ public class Emulate {
 			pseudoInstruction = lastPseudoInstructionBlock.getInstructionAt(addr);
 			if (pseudoInstruction != null) {
 				instruction_length = getInstructionLength(pseudoInstruction);
-				return pseudoInstruction.getPcode(false);
+				PcodeOp[] mainPcode = pseudoInstruction.getPcode(false);
+				PcodeOp[] injectionPcode = InjectionUtils.getEntryPcodeOps(pseudoInstruction);
+				if (injectionPcode != null) {
+					PcodeOp[] arr = new PcodeOp[injectionPcode.length + mainPcode.length];
+					System.arraycopy(injectionPcode, 0, arr, 0, injectionPcode.length);
+					System.arraycopy(mainPcode, 0, arr, injectionPcode.length, mainPcode.length);
+					return arr;
+				}
+				return mainPcode;
 			}
 			InstructionError error = lastPseudoInstructionBlock.getInstructionConflict();
 			if (error != null && addr.equals(error.getInstructionAddress())) {
