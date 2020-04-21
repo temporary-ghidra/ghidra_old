@@ -20,12 +20,14 @@ import java.math.BigInteger;
 
 import ghidra.app.plugin.processors.sleigh.SleighLanguage;
 import ghidra.pcode.error.LowlevelError;
+import ghidra.pcode.memstate.ManagedMemory;
 import ghidra.pcode.memstate.MemoryState;
 import ghidra.pcode.memstate.UniqueMemoryBank;
 import ghidra.pcode.opbehavior.*;
 import ghidra.pcode.pcoderaw.PcodeOpRaw;
 import ghidra.program.disassemble.Disassembler;
 import ghidra.program.model.address.*;
+import ghidra.program.model.data.PointerDataType;
 import ghidra.program.model.lang.*;
 import ghidra.program.model.listing.Instruction;
 import ghidra.program.model.pcode.PcodeOp;
@@ -56,6 +58,8 @@ public class Emulate {
 	private int instruction_length; ///< Length of current instruction in bytes (must include any delay slots)
 
 	private final SleighLanguage language;
+	private ConstantPool cpool;
+	private ManagedMemory managedMemory;
 	private final AddressFactory addrFactory;
 	private Register pcReg;
 
@@ -73,9 +77,11 @@ public class Emulate {
 	/// \param t is the SLEIGH translator
 	/// \param s is the MemoryState the emulator should manipulate
 	/// \param b is the table of breakpoints the emulator should invoke
-	public Emulate(SleighLanguage lang, MemoryState s, BreakTable b) {
+	public Emulate(SleighLanguage lang, MemoryState s, BreakTable b, ConstantPool cpool, ManagedMemory managedMemory) {
 		memstate = s;
 		this.language = lang;
+		this.cpool = cpool;
+		this.managedMemory = managedMemory;
 		this.addrFactory = lang.getAddressFactory();
 		pcReg = lang.getProgramCounter();
 		breaktable = b;
@@ -527,6 +533,9 @@ public class Emulate {
 					executeIndirect(raw);
 					fallthruOp();
 					break;
+				case PcodeOp.CPOOLREF:
+					executeCpoolRef(raw);
+					break;
 				default:
 					throw new LowlevelError("Unsupported op (opcode=" + behave.getOpCode() + ")");
 			}
@@ -610,6 +619,35 @@ public class Emulate {
 	/// \param op is the particular \e indirect op being executed
 	public void executeIndirect(PcodeOpRaw op) {
 		throw new LowlevelError("INDIRECT appearing in unheritaged code?");
+	}
+
+	public void executeCpoolRef(PcodeOpRaw op) {
+		if (cpool == null) {
+			throw new LowlevelError("No constant pool found");
+		}
+		long[] refs = new long[op.getInputs().length];
+		for (int i = 1; i < op.getInputs().length; i++)
+			refs[i] = op.getInput(i).getOffset();
+		ConstantPool.Record rec = cpool.getRecord(refs);
+		long out;
+		switch (rec.tag) {
+			case ConstantPool.POINTER_FIELD:
+				if (!(rec.type instanceof PointerDataType))
+					throw new LowlevelError("Record type must be a pointer");
+				// TODO: get full size for arrays, for now can preallocate these correctly via emulation script
+				int size = ((PointerDataType) rec.type).getDataType().getLength();
+				try {
+					out = managedMemory.getFieldPointer(op.getInput(0).getOffset(), rec.token, size);
+					memstate.setValue(op.getOutput(), out);
+				}
+				catch (InsufficientBytesException e) {
+					throw new LowlevelError("Not enough memory to allocate a field");
+				}
+				fallthruOp();
+				break;
+			default:
+				throw new LowlevelError("Unsupported cpool tag value (" + rec.tag + ")");
+		}
 	}
 
 }
