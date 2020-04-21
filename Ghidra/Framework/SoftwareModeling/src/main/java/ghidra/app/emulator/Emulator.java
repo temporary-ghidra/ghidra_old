@@ -89,7 +89,7 @@ public class Emulator {
 		ManagedMemory managedMemory = cfg.getManagedMemory();
 
 		breakTable = new BreakTableCallBack(language);
-		emulator = new Emulate(language, memState, breakTable);
+		emulator = new Emulate(language, memState, breakTable, cpool, managedMemory);
 
 		try {
 			setExecuteAddress(initialPC);
