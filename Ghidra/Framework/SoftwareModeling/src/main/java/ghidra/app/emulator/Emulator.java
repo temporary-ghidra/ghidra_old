@@ -85,6 +85,9 @@ public class Emulator {
 
 		initMemState(mstate);
 
+		ConstantPool cpool = cfg.getConstantPool();
+		ManagedMemory managedMemory = cfg.getManagedMemory();
+
 		breakTable = new BreakTableCallBack(language);
 		emulator = new Emulate(language, memState, breakTable);
 
