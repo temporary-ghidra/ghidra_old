@@ -136,7 +136,7 @@ public class PcodeFieldFactory extends FieldFactory {
 		Program program = instr.getProgram();
 
 		List<AttributedString> attributedStrings =
-			formatter.toAttributedStrings(program, instr.getPcode(true));
+			formatter.toAttributedStrings(instr, instr.getPcode(true));
 		List<String> strings = new ArrayList<>(attributedStrings.size());
 		for (AttributedString attributedString : attributedStrings) {
 			strings.add(attributedString.getText());
