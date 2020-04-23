@@ -30,7 +30,9 @@ import ghidra.app.util.viewer.options.OptionsGui;
 import ghidra.app.util.viewer.proxy.ProxyObj;
 import ghidra.framework.options.Options;
 import ghidra.framework.options.ToolOptions;
+import ghidra.pcode.utils.InjectionUtils;
 import ghidra.program.model.listing.*;
+import ghidra.program.model.pcode.PcodeOp;
 import ghidra.program.util.PcodeFieldLocation;
 import ghidra.program.util.ProgramLocation;
 
@@ -87,8 +89,13 @@ public class PcodeFieldFactory extends FieldFactory {
 
 		ArrayList<TextFieldElement> elements = new ArrayList<>();
 
+		PcodeOp[] arr = instr.getPcode(true);
+		arr = processPcodeInject1(arr, instr);
+		arr = processPcodeInject2(arr, instr);
+		String test = formatter.toString(instr, arr);
+
 		List<AttributedString> pcodeListing =
-			formatter.toAttributedStrings(instr.getProgram(), instr.getPcode(true));
+			formatter.toAttributedStrings(instr.getProgram(), arr);
 		int lineCnt = pcodeListing.size();
 		for (int i = 0; i < lineCnt; i++) {
 			elements.add(new TextFieldElement(pcodeListing.get(i), i, 0));
@@ -191,6 +198,38 @@ public class PcodeFieldFactory extends FieldFactory {
 		int maxDisplayLines = fieldOptions.getInt(MAX_DISPLAY_LINES_MSG, MAX_DISPLAY_LINES);
 		boolean displayRaw = fieldOptions.getBoolean(DISPLAY_RAW_PCODE, false);
 		formatter.setOptions(maxDisplayLines, displayRaw);
+	}
+
+	private PcodeOp[] processPcodeInject1(PcodeOp[] mainPcode, Instruction instr) {
+		//3)CALLMECHANISM : uponentry
+		PcodeOp[] injectionPcode = InjectionUtils.getEntryPcodeOps(instr);
+		if (injectionPcode != null) {
+			PcodeOp[] arr = new PcodeOp[injectionPcode.length + mainPcode.length];
+			formatter.addComment(instr.getAddress(), 0, "start of uponentry injection");
+			System.arraycopy(injectionPcode, 0, arr, 0, injectionPcode.length);
+			formatter.addComment(instr.getAddress(), injectionPcode.length, "end of uponentry injection");
+			System.arraycopy(mainPcode, 0, arr, injectionPcode.length, mainPcode.length);
+			return arr;
+		}
+		return mainPcode;
+	}
+
+	private PcodeOp[] processPcodeInject2(PcodeOp[] mainPcode, Instruction instr) {
+		//3)CALLMECHANISM : uponreturn
+		PcodeOp[] arr;
+		for (int i = 0; i < mainPcode.length; i++) {
+			PcodeOp[] injectionPcode = InjectionUtils.getReturnPcodeOps(instr, mainPcode[i]);
+			if (injectionPcode != null) {
+				arr = mainPcode;
+				mainPcode = new PcodeOp[arr.length + injectionPcode.length];
+				System.arraycopy(arr, 0, mainPcode, 0, i + 1);
+				formatter.addComment(instr.getAddress(), i + 1, "start of uponreturn injection");
+				System.arraycopy(injectionPcode, 0, mainPcode, i + 1, injectionPcode.length);
+				formatter.addComment(instr.getAddress(), i + 1 + injectionPcode.length, "end of uponreturn injection");
+				System.arraycopy(arr, i + 1, mainPcode, i + 1 + injectionPcode.length, arr.length - i - 1);
+			}
+		}
+		return mainPcode;
 	}
 
 }
