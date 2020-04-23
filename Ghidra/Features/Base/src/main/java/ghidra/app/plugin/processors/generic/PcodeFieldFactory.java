@@ -92,10 +92,9 @@ public class PcodeFieldFactory extends FieldFactory {
 		PcodeOp[] arr = instr.getPcode(true);
 		arr = processPcodeInject1(arr, instr);
 		arr = processPcodeInject2(arr, instr);
-		String test = formatter.toString(instr, arr);
 
 		List<AttributedString> pcodeListing =
-			formatter.toAttributedStrings(instr.getProgram(), arr);
+			formatter.toAttributedStrings(instr, arr);
 		int lineCnt = pcodeListing.size();
 		for (int i = 0; i < lineCnt; i++) {
 			elements.add(new TextFieldElement(pcodeListing.get(i), i, 0));
