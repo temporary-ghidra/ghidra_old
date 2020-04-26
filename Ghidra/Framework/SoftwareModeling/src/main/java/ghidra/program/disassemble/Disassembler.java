@@ -153,13 +153,14 @@ public class Disassembler implements DisassemblerConflictHandler {
 	 * Intended for block pseudo-disassembly use only when the method 
 	 * {@link Disassembler#pseudoDisassembleBlock(MemBuffer, RegisterValue, int)}
 	 * is used.
+	 * @param program the program to be disassembled.
 	 * @param language processor language
 	 * @param addrFactory address factory 
 	 * @param monitor progress monitor
 	 * @param listener object to notify of disassembly messages.
 	 * @return a disassembler ready to disassemble
 	 */
-	public static Disassembler getDisassembler(Language language, AddressFactory addrFactory,
+	public static Disassembler getDisassembler(Program program, Language language, AddressFactory addrFactory,
 			TaskMonitor monitor, DisassemblerMessageListener listener) {
 		Class<? extends Disassembler> disassemblerClass = getLanguageSpecificDisassembler(language);
 		if (disassemblerClass != null) {
@@ -176,7 +177,7 @@ public class Disassembler implements DisassemblerConflictHandler {
 					language.getLanguageDescription().getLanguageID(), e);
 			}
 		}
-		return new Disassembler(language, addrFactory, monitor, listener);
+		return new Disassemblerprogram, language, addrFactory, monitor, listener);
 	}
 
 	/**
@@ -231,14 +232,15 @@ public class Disassembler implements DisassemblerConflictHandler {
 
 	/**
 	 * Disassembler constructor.  Intended for block pseudo-disassembly use only.
+	 * @param program the program to be disassembled.
 	 * @param language processor language
 	 * @param addrFactory address factory 
 	 * @param monitor progress monitor
 	 * @param listener object to notify of disassembly messages.
 	 */
-	protected Disassembler(Language language, AddressFactory addrFactory, TaskMonitor monitor,
+	protected Disassembler(Program program, Language language, AddressFactory addrFactory, TaskMonitor monitor,
 			DisassemblerMessageListener listener) {
-		this(null, language, addrFactory, false, false, false, monitor, listener);
+		this(program, language, addrFactory, false, false, false, monitor, listener);
 	}
 
 	/**
@@ -922,7 +924,8 @@ public class Disassembler implements DisassemblerConflictHandler {
 
 				// TODO: An overall better caching of bytes for this block could be done instead
 				//       the previous buffering done here was not doing any buffering
-				MemBuffer instrMemBuffer = new DumbMemBufferImpl(blockMemBuffer.getMemory(), addr);
+				// MemBuffer instrMemBuffer = new DumbMemBufferImpl(blockMemBuffer.getMemory(), addr);
+				MemBuffer instrMemBuffer = new WrappedMemBuffer(blockMemBuffer, (int) addr.subtract(blockMemBuffer.getAddress()));
 
 				adjustPreParseContext(instrMemBuffer);
 
