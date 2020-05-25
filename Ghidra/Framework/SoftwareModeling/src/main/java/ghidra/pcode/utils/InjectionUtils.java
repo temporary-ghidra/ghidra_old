@@ -54,7 +54,10 @@ public class InjectionUtils {
 			InjectContext con = snippetLibrary.buildInjectContext();
 			con.baseAddr = instr.getMinAddress();
 			con.nextAddr = con.baseAddr.add(instr.getDefaultFallThroughOffset());
-			return payload.getPcode(program, con);
+			PcodeOp[] pcodeOps = payload.getPcode(program, con);
+			if(pcodeOps.length == 0)
+				pcodeOps = null;
+			return pcodeOps;
 		}
 		return null;
 	}
@@ -83,7 +86,10 @@ public class InjectionUtils {
 				InjectContext con = snippetLibrary.buildInjectContext();
 				con.baseAddr = instr.getMinAddress();
 				con.nextAddr = con.baseAddr.add(instr.getDefaultFallThroughOffset());
-				return payload.getPcode(program, con);
+				PcodeOp[] pcodeOps = payload.getPcode(program, con);
+				if(pcodeOps.length == 0)
+					pcodeOps = null;
+				return pcodeOps;
 			}
 		}
 		return null;
