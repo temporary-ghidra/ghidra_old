@@ -31,6 +31,7 @@ import ghidra.program.model.address.*;
 import ghidra.program.model.data.PointerDataType;
 import ghidra.program.model.lang.*;
 import ghidra.program.model.listing.Instruction;
+import ghidra.program.model.listing.Program;
 import ghidra.program.model.pcode.PcodeOp;
 import ghidra.program.model.pcode.Varnode;
 import ghidra.util.Msg;
@@ -78,7 +79,7 @@ public class Emulate {
 	/// \param t is the SLEIGH translator
 	/// \param s is the MemoryState the emulator should manipulate
 	/// \param b is the table of breakpoints the emulator should invoke
-	public Emulate(SleighLanguage lang, MemoryState s, BreakTable b, ConstantPool cpool, ManagedMemory managedMemory) {
+	public Emulate(Program program, SleighLanguage lang, MemoryState s, BreakTable b, ConstantPool cpool, ManagedMemory managedMemory) {
 		memstate = s;
 		this.language = lang;
 		this.cpool = cpool;
@@ -97,7 +98,7 @@ public class Emulate {
 //		emitterContext = new EmulateDisassemblerContext(lang, s);
 
 		pseudoDisassembler =
-			Disassembler.getDisassembler(lang, addrFactory, TaskMonitorAdapter.DUMMY_MONITOR, null);
+			Disassembler.getDisassembler(program, lang, addrFactory, TaskMonitorAdapter.DUMMY_MONITOR, null);
 
 		initInstuctionStateModifier();
 	}
@@ -642,16 +643,15 @@ public class Emulate {
 		if (cpool == null) {
 			throw new LowlevelError("No constant pool found");
 		}
-		long[] refs = new long[op.getInputs().length];
+		long[] refs = new long[op.getInputs().length - 1];
 		for (int i = 1; i < op.getInputs().length; i++)
-			refs[i] = op.getInput(i).getOffset();
+			refs[i - 1] = op.getInput(i).getOffset();
 		ConstantPool.Record rec = cpool.getRecord(refs);
 		long out;
 		switch (rec.tag) {
 			case ConstantPool.POINTER_FIELD:
 				if (!(rec.type instanceof PointerDataType))
 					throw new LowlevelError("Record type must be a pointer");
-				// TODO: get full size for arrays, for now can preallocate these correctly via emulation script
 				int size = ((PointerDataType) rec.type).getDataType().getLength();
 				try {
 					out = managedMemory.getFieldPointer(op.getInput(0).getOffset(), rec.token, size);
