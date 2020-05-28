@@ -4023,8 +4023,8 @@ define pcodeop exp;
 :FUCOMI ST0, freg   is vexMode=0 & byte=0xDB; frow=14 & fpage=1 & freg & ST0        { fcomi(freg); }                 
 :FUCOMIP ST0, freg  is vexMode=0 & byte=0xDF; frow=14 & fpage=1 & freg & ST0        { fcomi(freg); fpop(); }             
                                                                  
-define pcodeop fcos;
-:FCOS			    is vexMode=0 & byte=0xD9; byte=0xFF					{ ST0 = fcos(ST0); }
+define pcodeop cos;
+:FCOS			    is vexMode=0 & byte=0xD9; byte=0xFF					{ ST0 = cos(ST0); }
                                                                  
 :FDECSTP		    is vexMode=0 & byte=0xD9; byte=0xF6					{ fdec(); FPUStatusWord = FPUStatusWord & 0xfeff; C0 = 0; }  #Clear C0
 
@@ -4121,15 +4121,15 @@ define pcodeop fldenv;
 
 :FNOP           is vexMode=0 & byte=0xD9; byte=0xD0                 { }
 
-define pcodeop fpatan;
-:FPATAN		is vexMode=0 & byte=0xD9; byte=0xF3			{ ST1 = fpatan(ST1, ST0); fpop(); }
+define pcodeop atan;
+:FPATAN		is vexMode=0 & byte=0xD9; byte=0xF3			{ ST1 = atan(ST1 f/ ST0); fpop(); }
 
 :FPREM          is vexMode=0 & byte=0xD9; byte=0xF8                 { local tmp = ST0 f/ ST1; tmp = tmp f* ST1; ST0 = ST0 f- tmp; }
 
 :FPREM1         is vexMode=0 & byte=0xD9; byte=0xF5                 { local tmp = ST0 f/ ST1; tmp = tmp f* ST1; ST0 = ST0 f- tmp; }
 
-define pcodeop fptan;
-:FPTAN		is vexMode=0 & byte=0xD9; byte=0xF2			{ ST0 = fptan(ST0); one:4 = 1; tmp:10 = int2float(one); fpushv(tmp); }
+define pcodeop tan;
+:FPTAN		is vexMode=0 & byte=0xD9; byte=0xF2			{ ST0 = tan(ST0); one:4 = 1; tmp:10 = int2float(one); fpushv(tmp); }
 
 :FRNDINT        is vexMode=0 & byte=0xD9; byte=0xFC                 { local tmp = round(ST0); ST0 = tmp; }
 
@@ -4204,12 +4204,11 @@ define pcodeop fptan;
   FPULastInstructionOpcode = 0x0000;
 }
 
-define pcodeop fscale;
-:FSCALE		    is vexMode=0 & byte=0xD9; byte=0xFD			{ ST0 = fscale(ST0, ST1); }
+:FSCALE		    is vexMode=0 & byte=0xD9; byte=0xFD			{ ST0 = ST0 f* exp(ST1); }
 
-define pcodeop fsin;
-:FSIN		    is vexMode=0 & byte=0xD9; byte=0xFE			{ ST0 = fsin(ST0); }
-:FSINCOS	    is vexMode=0 & byte=0xD9; byte=0xFB			{ tmp:10 = fcos(ST0); ST0 = fsin(ST0); fpushv(tmp); }
+define pcodeop sin;
+:FSIN		    is vexMode=0 & byte=0xD9; byte=0xFE			{ ST0 = sin(ST0); }
+:FSINCOS	    is vexMode=0 & byte=0xD9; byte=0xFB			{ tmp:10 = cos(ST0); ST0 = sin(ST0); fpushv(tmp); }
 :FSQRT          is vexMode=0 & byte=0xD9; byte=0xFA                 { ST0 = sqrt(ST0); }
 
 :FST spec_m32   is vexMode=0 & byte=0xD9; (mod != 0b11 & reg_opcode=2) ... & spec_m32            { spec_m32 = float2float(ST0); }     
