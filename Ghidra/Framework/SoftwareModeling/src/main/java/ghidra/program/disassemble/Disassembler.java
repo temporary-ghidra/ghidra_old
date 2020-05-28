@@ -177,7 +177,7 @@ public class Disassembler implements DisassemblerConflictHandler {
 					language.getLanguageDescription().getLanguageID(), e);
 			}
 		}
-		return new Disassemblerprogram, language, addrFactory, monitor, listener);
+		return new Disassembler(program, language, addrFactory, monitor, listener);
 	}
 
 	/**
