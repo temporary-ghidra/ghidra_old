@@ -4388,6 +4388,7 @@ define pcodeop getsig;
 define pcodeop getexp;
 :FXTRACT        is vexMode=0 & byte=0xD9; byte=0xF4                 { significand:10 = getsig(ST0); exponent:10 = getexp(ST0); ST0 = exponent; fpushv(significand); }
 
+define pcodeop log;
 :FYL2X          is vexMode=0 & byte=0xD9; byte=0xF1                 { local log2st0 = log(ST0); ST1 = ST1 f* log2st0; fpop(); }
 :FYL2XP1        is vexMode=0 & byte=0xD9; byte=0xF9                 { one:4 = 1; tmp:10 = int2float(one); log2st0:10 = log(ST0 f+ tmp); ST1 = ST1 f* log2st0; fpop(); }
 
@@ -7838,13 +7839,43 @@ define pcodeop pmulld;
 :PMULLD XmmReg, m128     is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x38; byte=0x40; XmmReg ... & m128 { XmmReg = pmulld(XmmReg, m128); }
 :PMULLD XmmReg1, XmmReg2 is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x38; byte=0x40; xmmmod=3 & XmmReg1 & XmmReg2 { XmmReg1 = pmulld(XmmReg1, XmmReg2); }
 
-define pcodeop dpps;
-:DPPS XmmReg, m128, imm8     is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x3A; byte=0x40; XmmReg ... & m128; imm8 { XmmReg = dpps(XmmReg, m128, imm8:8); }
-:DPPS XmmReg1, XmmReg2, imm8 is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x3A; byte=0x40; xmmmod=3 & XmmReg1 & XmmReg2; imm8 { XmmReg1 = dpps(XmmReg1, XmmReg2, imm8:8); }
+:DPPS XmmReg, m128, imm8     is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x3A; byte=0x40; XmmReg ... & m128; imm8 {
+	local m:16 = m128;
+	tmp1:4 = ((imm8 >> 4) & 1) * (XmmReg[0,32] f* m[0,32]);
+	tmp2:4 = ((imm8 >> 5) & 1) * (XmmReg[32,32] f* m[32,32]);
+	tmp3:4 = ((imm8 >> 6) & 1) * (XmmReg[64,32] f* m[64,32]);
+	tmp4:4 = ((imm8 >> 7) & 1) * (XmmReg[96,32] f* m[96,32]);
+	XmmReg[0,32] = ((imm8 >> 0) & 1) * (tmp1 f+ tmp2 f+ tmp3 f+ tmp4);
+	XmmReg[32,32] = ((imm8 >> 1) & 1) * (tmp1 f+ tmp2 f+ tmp3 f+ tmp4);
+	XmmReg[64,32] = ((imm8 >> 2) & 1) * (tmp1 f+ tmp2 f+ tmp3 f+ tmp4);
+	XmmReg[96,32] = ((imm8 >> 3) & 1) * (tmp1 f+ tmp2 f+ tmp3 f+ tmp4);
+}
 
-define pcodeop dppd;
-:DPPD XmmReg, m128, imm8     is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x3A; byte=0x41; XmmReg ... & m128; imm8 { XmmReg = dppd(XmmReg, m128, imm8:8); }
-:DPPD XmmReg1, XmmReg2, imm8 is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x3A; byte=0x41; xmmmod=3 & XmmReg1 & XmmReg2; imm8 { XmmReg1 = dppd(XmmReg1, XmmReg2, imm8:8); }
+:DPPS XmmReg1, XmmReg2, imm8 is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x3A; byte=0x40; xmmmod=3 & XmmReg1 & XmmReg2; imm8 {
+	tmp1:4 = ((imm8 >> 4) & 1) * (XmmReg1[0,32] f* XmmReg2[0,32]);
+	tmp2:4 = ((imm8 >> 5) & 1) * (XmmReg1[32,32] f* XmmReg2[32,32]);
+	tmp3:4 = ((imm8 >> 6) & 1) * (XmmReg1[64,32] f* XmmReg2[64,32]);
+	tmp4:4 = ((imm8 >> 7) & 1) * (XmmReg1[96,32] f* XmmReg2[96,32]);
+	XmmReg1[0,32] = ((imm8 >> 0) & 1) * (tmp1 f+ tmp2 f+ tmp3 f+ tmp4);
+	XmmReg1[32,32] = ((imm8 >> 1) & 1) * (tmp1 f+ tmp2 f+ tmp3 f+ tmp4);
+	XmmReg1[64,32] = ((imm8 >> 2) & 1) * (tmp1 f+ tmp2 f+ tmp3 f+ tmp4);
+	XmmReg1[96,32] = ((imm8 >> 3) & 1) * (tmp1 f+ tmp2 f+ tmp3 f+ tmp4);
+}
+
+:DPPD XmmReg, m128, imm8     is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x3A; byte=0x41; XmmReg ... & m128; imm8 {
+	local m:16 = m128;
+	tmp1:8 = ((imm8 >> 4) & 1) * (XmmReg[0,64] f* m[0,64]);
+	tmp2:8 = ((imm8 >> 5) & 1) * (XmmReg[64,64] f* m[64,64]);
+	XmmReg[0,64] = ((imm8 >> 0) & 1) * (tmp1 f+ tmp2);
+	XmmReg[64,64] = ((imm8 >> 1) & 1) * (tmp1 f+ tmp2);
+}
+
+:DPPD XmmReg1, XmmReg2, imm8 is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x3A; byte=0x41; xmmmod=3 & XmmReg1 & XmmReg2; imm8 {
+	tmp1:8 = ((imm8 >> 4) & 1) * (XmmReg1[0,64] f* XmmReg2[0,64]);
+	tmp2:8 = ((imm8 >> 5) & 1) * (XmmReg1[64,64] f* XmmReg2[64,64]);
+	XmmReg1[0,64] = ((imm8 >> 0) & 1) * (tmp1 f+ tmp2);
+	XmmReg1[64,64] = ((imm8 >> 1) & 1) * (tmp1 f+ tmp2);
+}
 
 define pcodeop blendps;
 :BLENDPS XmmReg, m128, imm8     is vexMode=0 & $(PRE_66) & byte=0x0F; byte=0x3A; byte=0x0C; XmmReg ... & m128; imm8 { XmmReg = blendps(XmmReg, m128, imm8:8); }
