@@ -203,6 +203,18 @@ public class PcodeFormatter {
 		comments.put(addr + ";" + at, "//" + comment);
 	}
 
+	public void removeComments(Address addr, String str) {
+		Set<Map.Entry<String, String>> entries = comments.entrySet();
+		List<String> garbage = new ArrayList();
+		for (Map.Entry<String, String> entry : entries) {
+			if ((entry.getKey()).contains(addr + ";") && (entry.getValue()).contains(str))
+				garbage.add(entry.getKey());
+		}
+		for (String key : garbage) {
+			comments.remove(key);
+		}
+	}
+
 	private AttributedString formatOpTpl(Program program, OpTpl op, boolean indent) {
 
 		List<AttributedString> lineList = new ArrayList<AttributedString>();
