@@ -309,10 +309,14 @@ void PrintC::opTypeCast(const PcodeOp *op)
 
 {
   if (!option_nocasts) {
-    pushOp(&typecast,op);
+    pushOp(&function_call,op);
+    pushAtom(Atom("CAST",optoken,EmitXml::funcname_color,op));
+    pushOp(&comma,op);
+    pushVnImplied(op->getIn(0),op,mods);
     pushType(op->getOut()->getHigh()->getType());
   }
-  pushVnImplied(op->getIn(0),op,mods);
+  else
+    pushVnImplied(op->getIn(0),op,mods);
 }
 
 /// The syntax represents the given op using a function with one input,
