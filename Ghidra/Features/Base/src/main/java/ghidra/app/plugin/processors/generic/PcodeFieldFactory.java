@@ -92,6 +92,7 @@ public class PcodeFieldFactory extends FieldFactory {
 		PcodeOp[] arr = instr.getPcode(true);
 		arr = processPcodeInject1(arr, instr);
 		arr = processPcodeInject2(arr, instr);
+		arr = processPcodeInject3(arr, instr);
 
 		List<AttributedString> pcodeListing =
 			formatter.toAttributedStrings(instr, arr);
@@ -201,6 +202,7 @@ public class PcodeFieldFactory extends FieldFactory {
 
 	private PcodeOp[] processPcodeInject1(PcodeOp[] mainPcode, Instruction instr) {
 		//3)CALLMECHANISM : uponentry
+		formatter.removeComments(instr.getAddress(), "of uponentry injection");
 		PcodeOp[] injectionPcode = InjectionUtils.getEntryPcodeOps(instr);
 		if (injectionPcode != null) {
 			PcodeOp[] arr = new PcodeOp[injectionPcode.length + mainPcode.length];
@@ -215,6 +217,7 @@ public class PcodeFieldFactory extends FieldFactory {
 
 	private PcodeOp[] processPcodeInject2(PcodeOp[] mainPcode, Instruction instr) {
 		//3)CALLMECHANISM : uponreturn
+		formatter.removeComments(instr.getAddress(), "of uponreturn injection");
 		PcodeOp[] arr;
 		for (int i = 0; i < mainPcode.length; i++) {
 			PcodeOp[] injectionPcode = InjectionUtils.getReturnPcodeOps(instr, mainPcode[i]);
@@ -231,4 +234,22 @@ public class PcodeFieldFactory extends FieldFactory {
 		return mainPcode;
 	}
 
+	private PcodeOp[] processPcodeInject3(PcodeOp[] mainPcode, Instruction instr) {
+		//2)CALLOTHERFIXUP_TYPE
+		formatter.removeComments(instr.getAddress(), "of callother implementation");
+		PcodeOp[] arr;
+		for (int i = 0; i < mainPcode.length; i++) {
+			PcodeOp[] injectionPcode = InjectionUtils.getCallotherPcodeOps(instr, mainPcode[i]);
+			if (injectionPcode != null) {
+				arr = mainPcode;
+				mainPcode = new PcodeOp[arr.length + injectionPcode.length];
+				System.arraycopy(arr, 0, mainPcode, 0, i + 1);
+				formatter.addComment(instr.getAddress(), i + 1, "start of callother implementation");
+				System.arraycopy(injectionPcode, 0, mainPcode, i + 1, injectionPcode.length);
+				formatter.addComment(instr.getAddress(), i + 1 + injectionPcode.length, "end of callother implementation");
+				System.arraycopy(arr, i + 1, mainPcode, i + 1 + injectionPcode.length, arr.length - i - 1);
+			}
+		}
+		return mainPcode;
+	}
 }
