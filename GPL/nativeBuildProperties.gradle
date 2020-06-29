@@ -20,7 +20,11 @@ apply plugin: 'c'
  * for all native builds and should be extended by each module as-needed.
  ****************************************************************************/
 model {
-
+	toolChains {
+		vc(VisualCpp) {
+			installDir "C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools"
+		}
+	}
 	// define the platforms that we support in ghidra
 	platforms {
 		win32 {
@@ -52,7 +56,7 @@ task CheckToolChain {
 			// ensure that required MS Visual Studio is installed
 			if (!VISUAL_STUDIO_INSTALL_DIR) {
 				throw new GradleException("Visual Studio not found!");
-			}	
+			}
 		}
 	}
 }
