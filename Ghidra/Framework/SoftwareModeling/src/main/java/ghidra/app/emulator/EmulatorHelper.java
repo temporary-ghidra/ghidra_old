@@ -126,6 +126,7 @@ public class EmulatorHelper implements MemoryFaultHandler, EmulatorConfiguration
 		return managedMemory;
 	}
 
+	@Override
 	public Program getProgram() {
 		return program;
 	}
