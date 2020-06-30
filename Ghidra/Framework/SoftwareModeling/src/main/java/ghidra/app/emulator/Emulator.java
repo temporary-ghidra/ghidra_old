@@ -27,6 +27,7 @@ import ghidra.program.disassemble.Disassembler;
 import ghidra.program.model.address.*;
 import ghidra.program.model.lang.*;
 import ghidra.program.model.listing.Instruction;
+import ghidra.program.model.listing.Program;
 import ghidra.util.*;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
@@ -37,6 +38,7 @@ public class Emulator {
 
 	private SleighLanguage language;
 	private AddressFactory addrFactory;
+	private Program program;
 
 	private CompositeLoadImage loadImage = new CompositeLoadImage();
 
@@ -388,7 +390,7 @@ public class Emulator {
 		Address addr = getExecuteAddress();
 		EmulateMemoryStateBuffer memBuffer = new EmulateMemoryStateBuffer(memState, addr);
 
-		Disassembler disassembler = Disassembler.getDisassembler(language, addrFactory,
+		Disassembler disassembler = Disassembler.getDisassembler(program, language, addrFactory,
 			TaskMonitor.DUMMY, null);
 
 		boolean stopOnError = false;
