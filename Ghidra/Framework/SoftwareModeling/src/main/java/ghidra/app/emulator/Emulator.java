@@ -87,9 +87,10 @@ public class Emulator {
 
 		ConstantPool cpool = cfg.getConstantPool();
 		ManagedMemory managedMemory = cfg.getManagedMemory();
+		program = cfg.getProgram();
 
 		breakTable = new BreakTableCallBack(language);
-		emulator = new Emulate(language, memState, breakTable, cpool, managedMemory);
+		emulator = new Emulate(program, language, memState, breakTable, cpool, managedMemory);
 
 		try {
 			setExecuteAddress(initialPC);
