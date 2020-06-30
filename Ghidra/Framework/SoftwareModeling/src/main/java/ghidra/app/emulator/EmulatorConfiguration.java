@@ -21,6 +21,7 @@ import ghidra.pcode.memstate.MemoryFaultHandler;
 import ghidra.program.model.lang.Language;
 import ghidra.program.model.lang.ConstantPool;
 import ghidra.program.model.lang.Register;
+import ghidra.program.model.listing.Program;
 
 public interface EmulatorConfiguration {
 
@@ -29,6 +30,8 @@ public interface EmulatorConfiguration {
 	ConstantPool getConstantPool();
 
 	ManagedMemory getManagedMemory();
+
+	Program getProgram();
 
 	EmulatorLoadData getLoadData();
 
