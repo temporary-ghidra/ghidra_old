@@ -20,15 +20,17 @@ import java.util.List;
 import javax.swing.tree.TreePath;
 
 import docking.ComponentProvider;
-import ghidra.framework.main.datatable.ProjectDataActionContext;
+import ghidra.framework.main.datatable.ProjectDataContext;
+import ghidra.framework.main.datatable.ProjectTreeContext;
 import ghidra.framework.model.*;
 
-public class ProjectDataTreeActionContext extends ProjectDataActionContext {
+public class FrontEndProjectTreeContext extends ProjectDataContext
+		implements ProjectTreeContext {
 
 	private TreePath[] selectionPaths;
 	private DataTree tree;
 
-	public ProjectDataTreeActionContext(ComponentProvider provider, ProjectData projectData,
+	public FrontEndProjectTreeContext(ComponentProvider provider, ProjectData projectData,
 			TreePath[] selectionPaths,
 			List<DomainFolder> folderList, List<DomainFile> fileList, DataTree tree,
 			boolean isActiveProject) {
@@ -45,10 +47,12 @@ public class ProjectDataTreeActionContext extends ProjectDataActionContext {
 		return selectionPaths[0].getLastPathComponent();
 	}
 
+	@Override
 	public TreePath[] getSelectionPaths() {
 		return selectionPaths;
 	}
 
+	@Override
 	public DataTree getTree() {
 		return tree;
 	}

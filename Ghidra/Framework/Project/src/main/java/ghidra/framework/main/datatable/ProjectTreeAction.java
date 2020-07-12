@@ -17,33 +17,22 @@ package ghidra.framework.main.datatable;
 
 import docking.ActionContext;
 import docking.action.DockingAction;
-import ghidra.framework.main.datatree.ProjectDataTreeActionContext;
+import ghidra.framework.main.datatree.FrontEndProjectTreeContext;
 
-public abstract class ProjectDataTreeContextAction extends DockingAction {
+public abstract class ProjectTreeAction extends DockingAction {
 
-	public ProjectDataTreeContextAction(String name, String owner) {
+	public ProjectTreeAction(String name, String owner) {
 		super(name, owner);
 	}
 
 	@Override
 	public final boolean isEnabledForContext(ActionContext actionContext) {
-		if (!(actionContext instanceof ProjectDataTreeActionContext)) {
+		if (!(actionContext instanceof FrontEndProjectTreeContext)) {
 			return false;
 		}
 
-		ProjectDataTreeActionContext context = (ProjectDataTreeActionContext) actionContext;
-		if (ignoreTransientProject(context)) {
-			return false;
-		}
-
+		FrontEndProjectTreeContext context = (FrontEndProjectTreeContext) actionContext;
 		return isEnabledForContext(context);
-	}
-
-	protected boolean ignoreTransientProject(ProjectDataActionContext context) {
-		if (supportsTransientProjectData()) {
-			return false;
-		}
-		return context.isTransient();
 	}
 
 	/**
@@ -56,26 +45,26 @@ public abstract class ProjectDataTreeContextAction extends DockingAction {
 		return false;
 	}
 
-	protected boolean isEnabledForContext(ProjectDataTreeActionContext context) {
+	protected boolean isEnabledForContext(FrontEndProjectTreeContext context) {
 		return context.hasOneOrMoreFilesAndFolders();
 	}
 
 	@Override
 	public final void actionPerformed(ActionContext context) {
-		actionPerformed((ProjectDataTreeActionContext) context);
+		actionPerformed((FrontEndProjectTreeContext) context);
 	}
 
-	protected abstract void actionPerformed(ProjectDataTreeActionContext context);
+	protected abstract void actionPerformed(FrontEndProjectTreeContext context);
 
 	@Override
 	public boolean isValidContext(ActionContext context) {
-		if (!(context instanceof ProjectDataTreeActionContext)) {
+		if (!(context instanceof FrontEndProjectTreeContext)) {
 			return false;
 		}
-		return isValidContext((ProjectDataTreeActionContext) context);
+		return isValidContext((FrontEndProjectTreeContext) context);
 	}
 
-	protected boolean isValidContext(ProjectDataTreeActionContext context) {
+	protected boolean isValidContext(FrontEndProjectTreeContext context) {
 		return true;
 	}
 
@@ -84,10 +73,10 @@ public abstract class ProjectDataTreeContextAction extends DockingAction {
 		if (!isEnabledForContext(context)) {
 			return false;
 		}
-		return isAddToPopup((ProjectDataTreeActionContext) context);
+		return isAddToPopup((FrontEndProjectTreeContext) context);
 	}
 
-	protected boolean isAddToPopup(ProjectDataTreeActionContext context) {
+	protected boolean isAddToPopup(FrontEndProjectTreeContext context) {
 		return isEnabledForContext(context);
 	}
 
