@@ -301,6 +301,16 @@ void PrintC::opFunc(const PcodeOp *op)
     pushAtom(Atom("",blanktoken,EmitXml::no_color));
 }
 
+void PrintC::opConv(const PcodeOp *op)
+
+{
+  pushOp(&function_call,op);
+  pushAtom(Atom("CONVERT",optoken,EmitXml::funcname_color,op));
+  pushOp(&comma,op);
+  pushVnImplied(op->getIn(0),op,mods);
+  pushType(op->getOut()->getHigh()->getType());
+}
+
 /// The syntax represents the given op using a standard c-language cast.  The data-type
 /// being cast to is obtained from the output variable of the op. The input expression is
 /// also recursively pushed.
