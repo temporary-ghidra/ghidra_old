@@ -155,6 +155,7 @@ protected:
   void emitCommentGroup(const PcodeOp *inst);		///< Emit comments associated with a given statement
   void emitCommentFuncHeader(const Funcdata *fd);	///< Emit comments in the given function's header
   void opFunc(const PcodeOp *op);			///< Push a \e functional expression based on the given p-code op to the RPN stack
+  void opConv(const PcodeOp *op);
   void opTypeCast(const PcodeOp *op);			///< Push the given p-code op using type-cast syntax to the RPN stack
   void opHiddenFunc(const PcodeOp *op);			///< Push the given p-code op as a hidden token
   bool printCharacterConstant(ostream &s,const Address &addr,Datatype *charType) const;
@@ -273,9 +274,9 @@ public:
   virtual void opFloatNeg(const PcodeOp *op) { opUnary(&unary_minus,op); }
   virtual void opFloatAbs(const PcodeOp *op) { opFunc(op); }
   virtual void opFloatSqrt(const PcodeOp *op) { opFunc(op); }
-  virtual void opFloatInt2Float(const PcodeOp *op) { opFunc(op); }
-  virtual void opFloatFloat2Float(const PcodeOp *op) { opFunc(op); }
-  virtual void opFloatTrunc(const PcodeOp *op) { opFunc(op); }
+  virtual void opFloatInt2Float(const PcodeOp *op) { opConv(op); }
+  virtual void opFloatFloat2Float(const PcodeOp *op) { opConv(op); }
+  virtual void opFloatTrunc(const PcodeOp *op) { opConv(op); }
   virtual void opFloatCeil(const PcodeOp *op) { opFunc(op); }
   virtual void opFloatFloor(const PcodeOp *op) { opFunc(op); }
   virtual void opFloatRound(const PcodeOp *op) { opFunc(op); }
