@@ -50,6 +50,8 @@ import ghidra.util.task.TaskMonitor;
  */
 public class Disassembler implements DisassemblerConflictHandler {
 
+	private static final int DISASSEMBLE_MEMORY_CACHE_SIZE = 8;
+
 	/**
 	 * <code>MARK_BAD_INSTRUCTION_PROPERTY</code> Program Disassembler property 
 	 * enables marking of instruction disassembly errors.  Boolean property is defined
@@ -153,14 +155,13 @@ public class Disassembler implements DisassemblerConflictHandler {
 	 * Intended for block pseudo-disassembly use only when the method 
 	 * {@link Disassembler#pseudoDisassembleBlock(MemBuffer, RegisterValue, int)}
 	 * is used.
-	 * @param program the program to be disassembled.
 	 * @param language processor language
 	 * @param addrFactory address factory 
 	 * @param monitor progress monitor
 	 * @param listener object to notify of disassembly messages.
 	 * @return a disassembler ready to disassemble
 	 */
-	public static Disassembler getDisassembler(Program program, Language language, AddressFactory addrFactory,
+	public static Disassembler getDisassembler(Language language, AddressFactory addrFactory,
 			TaskMonitor monitor, DisassemblerMessageListener listener) {
 		Class<? extends Disassembler> disassemblerClass = getLanguageSpecificDisassembler(language);
 		if (disassemblerClass != null) {
@@ -177,7 +178,7 @@ public class Disassembler implements DisassemblerConflictHandler {
 					language.getLanguageDescription().getLanguageID(), e);
 			}
 		}
-		return new Disassembler(program, language, addrFactory, monitor, listener);
+		return new Disassembler(language, addrFactory, monitor, listener);
 	}
 
 	/**
@@ -232,15 +233,14 @@ public class Disassembler implements DisassemblerConflictHandler {
 
 	/**
 	 * Disassembler constructor.  Intended for block pseudo-disassembly use only.
-	 * @param program the program to be disassembled.
 	 * @param language processor language
 	 * @param addrFactory address factory 
 	 * @param monitor progress monitor
 	 * @param listener object to notify of disassembly messages.
 	 */
-	protected Disassembler(Program program, Language language, AddressFactory addrFactory, TaskMonitor monitor,
+	protected Disassembler(Language language, AddressFactory addrFactory, TaskMonitor monitor,
 			DisassemblerMessageListener listener) {
-		this(program, language, addrFactory, false, false, false, monitor, listener);
+		this(null, language, addrFactory, false, false, false, monitor, listener);
 	}
 
 	/**
@@ -922,10 +922,8 @@ public class Disassembler implements DisassemblerConflictHandler {
 
 				disassemblerContext.flowToAddress(addr);
 
-				// TODO: An overall better caching of bytes for this block could be done instead
-				//       the previous buffering done here was not doing any buffering
-				// MemBuffer instrMemBuffer = new DumbMemBufferImpl(blockMemBuffer.getMemory(), addr);
-				MemBuffer instrMemBuffer = new WrappedMemBuffer(blockMemBuffer, (int) addr.subtract(blockMemBuffer.getAddress()));
+				MemBuffer instrMemBuffer = new WrappedMemBuffer(blockMemBuffer, DISASSEMBLE_MEMORY_CACHE_SIZE,
+						(int) addr.subtract(blockMemBuffer.getAddress()));
 
 				adjustPreParseContext(instrMemBuffer);
 
@@ -1471,6 +1469,24 @@ public class Disassembler implements DisassemblerConflictHandler {
 		else {
 			bmMgr.removeBookmarks(addressSet, BookmarkType.WARNING, UNIMPL_BOOKMARK_CATEGORY,
 				monitor);
+		}
+	}
+
+	/**
+	 * Clear all bookmarks which indicate Bad Instruction within the specified address set.
+	 * @param program program to clear bookmarks
+	 * @param addressSet restricted address set or null for entire program
+	 * @param monitor allow canceling
+	 * @throws CancelledException if monitor canceled
+	 */
+	public static void clearBadInstructionErrors(Program program, AddressSetView addressSet,
+			TaskMonitor monitor) throws CancelledException {
+		BookmarkManager bmMgr = program.getBookmarkManager();
+		if (addressSet == null) {
+			bmMgr.removeBookmarks(BookmarkType.ERROR, ERROR_BOOKMARK_CATEGORY, monitor);
+		}
+		else {
+			bmMgr.removeBookmarks(addressSet, BookmarkType.ERROR, ERROR_BOOKMARK_CATEGORY, monitor);
 		}
 	}
 
