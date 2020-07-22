@@ -33,7 +33,8 @@ import ghidra.program.model.lang.*;
 import ghidra.program.model.listing.*;
 import ghidra.program.model.mem.MemoryBlock;
 import ghidra.program.model.mem.MemoryConflictException;
-import ghidra.util.*;
+import ghidra.util.DataConverter;
+import ghidra.util.Msg;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.exception.DuplicateNameException;
 import ghidra.util.task.TaskMonitor;
@@ -53,6 +54,8 @@ public class EmulatorHelper implements MemoryFaultHandler, EmulatorConfiguration
 	private MemoryWriteTracker memoryWriteTracker;
 
 	private MemoryFaultHandler faultHandler;
+
+	private DataConverter converter;
 
 	private BreakCallBack addressBreak = new BreakCallBack() {
 		@Override
@@ -78,6 +81,8 @@ public class EmulatorHelper implements MemoryFaultHandler, EmulatorConfiguration
 			managedMemory = new ManagedMemory(cpool);
 
 		emulator = new Emulator(this);
+
+		converter = DataConverter.getInstance(program.getMemory().isBigEndian());
 	}
 
 	public void dispose() {
@@ -294,10 +299,7 @@ public class EmulatorHelper implements MemoryFaultHandler, EmulatorConfiguration
 			throws Exception {
 		long offset = readRegister(stackPtrReg).longValue() + relativeOffset;
 		byte[] bytes = readMemory(stackMemorySpace.getAddress(offset), size);
-		if (program.getMemory().isBigEndian()) {
-			return BigEndianDataConverter.INSTANCE.getBigInteger(bytes, size, signed);
-		}
-		return LittleEndianDataConverter.INSTANCE.getBigInteger(bytes, size, signed);
+		return converter.getBigInteger(bytes, size, signed);
 	}
 
 	/**
@@ -310,12 +312,7 @@ public class EmulatorHelper implements MemoryFaultHandler, EmulatorConfiguration
 	public void writeStackValue(int relativeOffset, int size, long value) throws Exception {
 		long offset = readRegister(stackPtrReg).longValue() + relativeOffset;
 		byte[] bytes = new byte[size];
-		if (program.getMemory().isBigEndian()) {
-			BigEndianDataConverter.INSTANCE.getBytes(value, bytes);
-		}
-		else {
-			LittleEndianDataConverter.INSTANCE.getBytes(value, bytes);
-		}
+		converter.getBytes(value, size, bytes, 0);
 		writeMemory(stackMemorySpace.getAddress(offset), bytes);
 	}
 
@@ -329,13 +326,7 @@ public class EmulatorHelper implements MemoryFaultHandler, EmulatorConfiguration
 	public void writeStackValue(int relativeOffset, int size, BigInteger value) throws Exception {
 		// TODO: verify that sign byte is not added to size of bytes
 		long offset = readRegister(stackPtrReg).longValue() + relativeOffset;
-		byte[] bytes;
-		if (program.getMemory().isBigEndian()) {
-			bytes = BigEndianDataConverter.INSTANCE.getBytes(value, size);
-		}
-		else {
-			bytes = LittleEndianDataConverter.INSTANCE.getBytes(value, size);
-		}
+		byte[] bytes = converter.getBytes(value, size);
 		writeMemory(stackMemorySpace.getAddress(offset), bytes);
 	}
 
