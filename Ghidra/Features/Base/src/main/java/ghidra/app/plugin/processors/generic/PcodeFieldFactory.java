@@ -15,8 +15,10 @@
  */
 package ghidra.app.plugin.processors.generic;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import docking.widgets.fieldpanel.field.*;
@@ -31,6 +33,7 @@ import ghidra.app.util.viewer.proxy.ProxyObj;
 import ghidra.framework.options.Options;
 import ghidra.framework.options.ToolOptions;
 import ghidra.pcode.utils.InjectionUtils;
+import ghidra.program.model.lang.ConstantPool;
 import ghidra.program.model.listing.*;
 import ghidra.program.model.pcode.PcodeOp;
 import ghidra.program.util.PcodeFieldLocation;
@@ -94,6 +97,7 @@ public class PcodeFieldFactory extends FieldFactory {
 		arr = processPcodeInject2(arr, instr);
 		arr = processPcodeInject3(arr, instr);
 
+		addCpoolRefInfo(arr, instr);
 		List<AttributedString> pcodeListing =
 			formatter.toAttributedStrings(instr, arr);
 		int lineCnt = pcodeListing.size();
@@ -251,5 +255,88 @@ public class PcodeFieldFactory extends FieldFactory {
 			}
 		}
 		return mainPcode;
+	}
+
+	private void addCpoolRefInfo(PcodeOp[] mainPcode, Instruction instr) {
+		formatter.removeComments(instr.getAddress(), "CPOOL");
+		Program program = instr.getProgram();
+		ConstantPool cpool;
+		try {
+			cpool = program.getCompilerSpec().getPcodeInjectLibrary().getConstantPool(program);
+		} catch (IOException e) {
+			cpool = null;
+		}
+		PcodeOp op;
+		for (int i = 0; i < mainPcode.length; i++) {
+			op = mainPcode[i];
+			if (op.getOpcode() == PcodeOp.CPOOLREF && cpool != null) {
+				long[] refs = new long[op.getInputs().length - 1];
+				for (int j = 1; j < op.getInputs().length; j++)
+					refs[j - 1] = op.getInput(j).getOffset();
+				ConstantPool.Record rec = cpool.getRecord(refs);
+				formatter.addComment(instr.getAddress(), i + 1, getCpoolComment(rec));
+			}
+		}
+	}
+
+	private String getCpoolComment(ConstantPool.Record record) {
+		String EOL = System.getProperty("line.separator");
+		StringBuilder sb = new StringBuilder();
+		sb.append("CPOOL tag: ");
+		sb.append(resolveTagStr(record.tag));
+		sb.append(EOL);
+		if (record.token != null) {
+			sb.append("CPOOL token: ");
+			sb.append(record.token);
+			sb.append(EOL);
+		}
+		if (record.value != 0) {
+			sb.append("CPOOL value: ");
+			sb.append(record.value);
+			sb.append(EOL);
+		}
+		if (record.byteData != null) {
+			sb.append("CPOOL byteData: ");
+			sb.append(Arrays.toString(record.byteData));
+			sb.append(EOL);
+		}
+		if (record.type != null) {
+			sb.append("CPOOL type: ");
+			sb.append(record.type);
+			sb.append(EOL);
+		}
+		if (record.hasThisPtr || record.isConstructor) {
+			sb.append("CPOOL has flags: ");
+			if (record.hasThisPtr)
+				sb.append("hasThisPtr");
+			if (record.hasThisPtr && record.isConstructor)
+				sb.append(", ");
+			if (record.isConstructor)
+				sb.append("isConstructor");
+		}
+		return sb.toString();
+	}
+
+	private String resolveTagStr(int type) {
+		switch (type) {
+			case ConstantPool.PRIMITIVE:
+				return "primitive";
+			case ConstantPool.STRING_LITERAL:
+				return "string";
+			case ConstantPool.CLASS_REFERENCE:
+				return "classref";
+			case ConstantPool.POINTER_METHOD:
+				return "method";
+			case ConstantPool.POINTER_FIELD:
+				return "field";
+			case ConstantPool.ARRAY_LENGTH:
+				return "arraylength";
+			case ConstantPool.INSTANCE_OF:
+				return "instanceof";
+			case ConstantPool.CHECK_CAST:
+				return "checkcast";
+			default:
+				return "unknown";
+		}
 	}
 }
