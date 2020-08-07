@@ -286,7 +286,7 @@ public class Disassembler implements DisassemblerConflictHandler {
 			bmMgr = program.getBookmarkManager();
 		}
 		else {
-			defaultLanguageContext = new ProgramContextImpl(language.getRegisters());
+			defaultLanguageContext = new ProgramContextImpl(language);
 			language.applyContextSettings(defaultLanguageContext);
 		}
 
@@ -1498,11 +1498,6 @@ public class Disassembler implements DisassemblerConflictHandler {
 		}
 	}
 
-	private static Register[] getContextRegisters(Register baseContextRegister) {
-		return baseContextRegister != null ? new Register[] { baseContextRegister }
-				: new Register[0];
-	}
-
 	/**
 	 * <code>DisassemblerProgramContext</code> is used as a proxy program context due to the 
 	 * delayed nature of laying down instructions and their associated context state.
@@ -1519,7 +1514,7 @@ public class Disassembler implements DisassemblerConflictHandler {
 		private InstructionContext instructionContextCache = null;
 
 		DisassemblerProgramContext() {
-			super(getContextRegisters(Disassembler.this.baseContextRegister));
+			super(Disassembler.this.language);
 			if (realProgramContext != null) {
 				setDefaultDisassemblyContext(realProgramContext.getDefaultDisassemblyContext());
 			}
@@ -1734,7 +1729,7 @@ public class Disassembler implements DisassemblerConflictHandler {
 		}
 
 		@Override
-		public Register[] getRegisters() {
+		public List<Register> getRegisters() {
 			return langauge.getRegisters();
 		}
 
