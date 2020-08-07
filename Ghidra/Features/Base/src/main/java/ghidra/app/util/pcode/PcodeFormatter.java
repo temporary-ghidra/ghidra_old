@@ -155,17 +155,18 @@ public class PcodeFormatter {
 			if (buf.length() != 0) {
 				buf.append(EOL);
 			}
-			comment = comments.get(instr.getAddress() + ";" + i);
+			comment = comments.get(instr.getAddress() + ";" + i).replace(EOL, EOL + "//");
 			if (comment != null) {
-				buf.append(comment);
+				buf.append("//" + comment);
 				buf.append(EOL);
 			}
 			buf.append(line.toString());
 		}
-		comment = comments.get(instr.getAddress() + ";" + pcodeOpTemplates.length);
+		comment = comments.get(instr.getAddress() + ";" + pcodeOpTemplates.length)
+			.replace(EOL, EOL + "//");
 		if (comment != null) {
 			buf.append(EOL);
-			buf.append(comment);
+			buf.append("//" + comment);
 		}
 		return buf.toString();
 	}
@@ -188,19 +189,31 @@ public class PcodeFormatter {
 				break;
 			}
 			comment = comments.get(instr.getAddress() + ";" + i);
-			if (comment != null)
-				list.add(new AttributedString(comment, Color.BLACK, metrics));
+			if (comment != null) {
+				String[] strings = comment.split(EOL);
+				for (int j = 0; j < strings.length; j++)
+					list.add(new AttributedString("//" + strings[j], Color.BLACK, metrics));
+			}
 			list.add(formatOpTpl(instr.getProgram(), pcodeOpTemplates[i], indent));
 		}
 		comment = comments.get(instr.getAddress() + ";" + pcodeOpTemplates.length);
-		if (comment != null)
-			list.add(new AttributedString(comment, Color.BLACK, metrics));
+		if (comment != null) {
+			String[] strings = comment.split(EOL);
+			for (int j = 0; j < strings.length; j++)
+				list.add(new AttributedString("//" + strings[j], Color.BLACK, metrics));
+		}
 		return list;
 
 	}
 
+	/**
+	 * Add several comments as a multi-line string but without EOL at the end
+	 * @param addr
+	 * @param at
+	 * @param comment
+	 */
 	public void addComment (Address addr, int at, String comment) {
-		comments.put(addr + ";" + at, "//" + comment);
+		comments.put(addr + ";" + at, comment);
 	}
 
 	public void removeComments(Address addr, String str) {
