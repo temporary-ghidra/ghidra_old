@@ -693,7 +693,7 @@ void PrintC::opIntZext(const PcodeOp *op,const PcodeOp *readOp)
     if (option_hide_exts && castStrategy->isExtensionCastImplied(op,readOp))
       opHiddenFunc(op);
     else
-      opTypeCast(op);
+      opConv(op);
   }
   else
     opFunc(op);
@@ -706,7 +706,7 @@ void PrintC::opIntSext(const PcodeOp *op,const PcodeOp *readOp)
     if (option_hide_exts && castStrategy->isExtensionCastImplied(op,readOp))
       opHiddenFunc(op);
     else
-      opTypeCast(op);
+      opConv(op);
   }
   else
     opFunc(op);
