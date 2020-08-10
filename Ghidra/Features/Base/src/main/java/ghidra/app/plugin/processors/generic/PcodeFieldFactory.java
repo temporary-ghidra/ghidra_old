@@ -305,14 +305,8 @@ public class PcodeFieldFactory extends FieldFactory {
 			sb.append(record.type);
 			sb.append(EOL);
 		}
-		if (record.hasThisPtr || record.isConstructor) {
-			sb.append("CPOOL has flags: ");
-			if (record.hasThisPtr)
-				sb.append("hasThisPtr");
-			if (record.hasThisPtr && record.isConstructor)
-				sb.append(", ");
-			if (record.isConstructor)
-				sb.append("isConstructor");
+		if (record.isConstructor) {
+			sb.append("CPOOL has isConstructor flag");
 		}
 		return sb.toString();
 	}
