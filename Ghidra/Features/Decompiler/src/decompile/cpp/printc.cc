@@ -736,7 +736,7 @@ void PrintC::opSubpiece(const PcodeOp *op)
   if (castStrategy->isSubpieceCast(op->getOut()->getHigh()->getType(),
 				   op->getIn(0)->getHigh()->getType(),
 				   (uint4)op->getIn(1)->getOffset()))
-    opTypeCast(op);
+    opConv(op);
   else
     opFunc(op);
 }
