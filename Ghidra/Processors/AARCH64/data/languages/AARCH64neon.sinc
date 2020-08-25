@@ -14,9 +14,9 @@
 
 # uncomment only one of these:
 
-@define SEMANTIC_force ""		# force-semantics
-# @define SEMANTIC_primitive ""		# adds 21 MB (LE) and 32 MB (BE)
-@define SEMANTIC_pcode ""		# adds 3 MB (LE) and 3 MB (BE)
+# @define SEMANTIC_force ""		# force-semantics
+@define SEMANTIC_primitive ""		# adds 21 MB (LE) and 32 MB (BE)
+# @define SEMANTIC_pcode ""		# adds 3 MB (LE) and 3 MB (BE)
 # @define SEMANTIC_pseudo ""		# adds 1 MB (LE) and 2 MB (BE)
 
 # C7.2.1 ABS page C7-1009 line 58362 MATCH x5e20b800/mask=xff3ffc00
@@ -52,32 +52,14 @@ is b_31=0 & b_30=0 & b_2429=0b001110 & b_2223=0b00 & b_1021=0b100000101110 & Rd_
 {
 @if defined(SEMANTIC_primitive)
 	# simd unary Rd_VPR64.8B = MP_INT_ABS(Rn_VPR64.8B) on lane size 1
-	local tmp1:4 = 0;
-	local tmp2:4 = 0;
-	simd_address_at(tmp1, Rn_VPR64.8B, 0, 1, 8);
-	simd_address_at(tmp2, Rd_VPR64.8B, 0, 1, 8);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR64.8B, 1, 1, 8);
-	simd_address_at(tmp2, Rd_VPR64.8B, 1, 1, 8);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR64.8B, 2, 1, 8);
-	simd_address_at(tmp2, Rd_VPR64.8B, 2, 1, 8);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR64.8B, 3, 1, 8);
-	simd_address_at(tmp2, Rd_VPR64.8B, 3, 1, 8);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR64.8B, 4, 1, 8);
-	simd_address_at(tmp2, Rd_VPR64.8B, 4, 1, 8);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR64.8B, 5, 1, 8);
-	simd_address_at(tmp2, Rd_VPR64.8B, 5, 1, 8);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR64.8B, 6, 1, 8);
-	simd_address_at(tmp2, Rd_VPR64.8B, 6, 1, 8);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR64.8B, 7, 1, 8);
-	simd_address_at(tmp2, Rd_VPR64.8B, 7, 1, 8);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
+	Rd_VPR64.8B[0,8] = MP_INT_ABS(Rn_VPR64.8B[0,8]);
+	Rd_VPR64.8B[8,8] = MP_INT_ABS(Rn_VPR64.8B[8,8]);
+	Rd_VPR64.8B[16,8] = MP_INT_ABS(Rn_VPR64.8B[16,8]);
+	Rd_VPR64.8B[24,8] = MP_INT_ABS(Rn_VPR64.8B[24,8]);
+	Rd_VPR64.8B[32,8] = MP_INT_ABS(Rn_VPR64.8B[32,8]);
+	Rd_VPR64.8B[40,8] = MP_INT_ABS(Rn_VPR64.8B[40,8]);
+	Rd_VPR64.8B[48,8] = MP_INT_ABS(Rn_VPR64.8B[48,8]);
+	Rd_VPR64.8B[56,8] = MP_INT_ABS(Rn_VPR64.8B[56,8]);
 	zext_zd(Zd); # zero upper 24 bytes of Zd
 @elif defined(SEMANTIC_pcode)
 	local tmpd:8 = SIMD_INT_ABS(Rn_VPR64.8B, 1:1);
@@ -99,56 +81,22 @@ is b_31=0 & b_30=1 & b_2429=0b001110 & b_2223=0b00 & b_1021=0b100000101110 & Rd_
 {
 @if defined(SEMANTIC_primitive)
 	# simd unary Rd_VPR128.16B = MP_INT_ABS(Rn_VPR128.16B) on lane size 1
-	local tmp1:4 = 0;
-	local tmp2:4 = 0;
-	simd_address_at(tmp1, Rn_VPR128.16B, 0, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 0, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.16B, 1, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 1, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.16B, 2, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 2, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.16B, 3, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 3, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.16B, 4, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 4, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.16B, 5, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 5, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.16B, 6, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 6, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.16B, 7, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 7, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.16B, 8, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 8, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.16B, 9, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 9, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.16B, 10, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 10, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.16B, 11, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 11, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.16B, 12, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 12, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.16B, 13, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 13, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.16B, 14, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 14, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.16B, 15, 1, 16);
-	simd_address_at(tmp2, Rd_VPR128.16B, 15, 1, 16);
-	* [register]:1 tmp2 = MP_INT_ABS(* [register]:1 tmp1);
+	Rd_VPR128.16B[0,8] = MP_INT_ABS(Rn_VPR128.16B[0,8]);
+	Rd_VPR128.16B[8,8] = MP_INT_ABS(Rn_VPR128.16B[8,8]);
+	Rd_VPR128.16B[16,8] = MP_INT_ABS(Rn_VPR128.16B[16,8]);
+	Rd_VPR128.16B[24,8] = MP_INT_ABS(Rn_VPR128.16B[24,8]);
+	Rd_VPR128.16B[32,8] = MP_INT_ABS(Rn_VPR128.16B[32,8]);
+	Rd_VPR128.16B[40,8] = MP_INT_ABS(Rn_VPR128.16B[40,8]);
+	Rd_VPR128.16B[48,8] = MP_INT_ABS(Rn_VPR128.16B[48,8]);
+	Rd_VPR128.16B[56,8] = MP_INT_ABS(Rn_VPR128.16B[56,8]);
+	Rd_VPR128.16B[64,8] = MP_INT_ABS(Rn_VPR128.16B[64,8]);
+	Rd_VPR128.16B[72,8] = MP_INT_ABS(Rn_VPR128.16B[72,8]);
+	Rd_VPR128.16B[80,8] = MP_INT_ABS(Rn_VPR128.16B[80,8]);
+	Rd_VPR128.16B[88,8] = MP_INT_ABS(Rn_VPR128.16B[88,8]);
+	Rd_VPR128.16B[96,8] = MP_INT_ABS(Rn_VPR128.16B[96,8]);
+	Rd_VPR128.16B[104,8] = MP_INT_ABS(Rn_VPR128.16B[104,8]);
+	Rd_VPR128.16B[112,8] = MP_INT_ABS(Rn_VPR128.16B[112,8]);
+	Rd_VPR128.16B[120,8] = MP_INT_ABS(Rn_VPR128.16B[120,8]);
 	zext_zq(Zd); # zero upper 16 bytes of Zd
 @elif defined(SEMANTIC_pcode)
 	local tmpd:16 = SIMD_INT_ABS(Rn_VPR128.16B, 1:1);
@@ -170,20 +118,10 @@ is b_31=0 & b_30=0 & b_2429=0b001110 & b_2223=0b01 & b_1021=0b100000101110 & Rd_
 {
 @if defined(SEMANTIC_primitive)
 	# simd unary Rd_VPR64.4H = MP_INT_ABS(Rn_VPR64.4H) on lane size 2
-	local tmp1:4 = 0;
-	local tmp2:4 = 0;
-	simd_address_at(tmp1, Rn_VPR64.4H, 0, 2, 8);
-	simd_address_at(tmp2, Rd_VPR64.4H, 0, 2, 8);
-	* [register]:2 tmp2 = MP_INT_ABS(* [register]:2 tmp1);
-	simd_address_at(tmp1, Rn_VPR64.4H, 1, 2, 8);
-	simd_address_at(tmp2, Rd_VPR64.4H, 1, 2, 8);
-	* [register]:2 tmp2 = MP_INT_ABS(* [register]:2 tmp1);
-	simd_address_at(tmp1, Rn_VPR64.4H, 2, 2, 8);
-	simd_address_at(tmp2, Rd_VPR64.4H, 2, 2, 8);
-	* [register]:2 tmp2 = MP_INT_ABS(* [register]:2 tmp1);
-	simd_address_at(tmp1, Rn_VPR64.4H, 3, 2, 8);
-	simd_address_at(tmp2, Rd_VPR64.4H, 3, 2, 8);
-	* [register]:2 tmp2 = MP_INT_ABS(* [register]:2 tmp1);
+	Rd_VPR64.4H[0,16] = MP_INT_ABS(Rn_VPR64.4H[0,16]);
+	Rd_VPR64.4H[16,16] = MP_INT_ABS(Rn_VPR64.4H[16,16]);
+	Rd_VPR64.4H[32,16] = MP_INT_ABS(Rn_VPR64.4H[32,16]);
+	Rd_VPR64.4H[48,16] = MP_INT_ABS(Rn_VPR64.4H[48,16]);
 	zext_zd(Zd); # zero upper 24 bytes of Zd
 @elif defined(SEMANTIC_pcode)
 	local tmpd:8 = SIMD_INT_ABS(Rn_VPR64.4H, 2:1);
@@ -205,32 +143,14 @@ is b_31=0 & b_30=1 & b_2429=0b001110 & b_2223=0b01 & b_1021=0b100000101110 & Rd_
 {
 @if defined(SEMANTIC_primitive)
 	# simd unary Rd_VPR128.8H = MP_INT_ABS(Rn_VPR128.8H) on lane size 2
-	local tmp1:4 = 0;
-	local tmp2:4 = 0;
-	simd_address_at(tmp1, Rn_VPR128.8H, 0, 2, 16);
-	simd_address_at(tmp2, Rd_VPR128.8H, 0, 2, 16);
-	* [register]:2 tmp2 = MP_INT_ABS(* [register]:2 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.8H, 1, 2, 16);
-	simd_address_at(tmp2, Rd_VPR128.8H, 1, 2, 16);
-	* [register]:2 tmp2 = MP_INT_ABS(* [register]:2 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.8H, 2, 2, 16);
-	simd_address_at(tmp2, Rd_VPR128.8H, 2, 2, 16);
-	* [register]:2 tmp2 = MP_INT_ABS(* [register]:2 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.8H, 3, 2, 16);
-	simd_address_at(tmp2, Rd_VPR128.8H, 3, 2, 16);
-	* [register]:2 tmp2 = MP_INT_ABS(* [register]:2 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.8H, 4, 2, 16);
-	simd_address_at(tmp2, Rd_VPR128.8H, 4, 2, 16);
-	* [register]:2 tmp2 = MP_INT_ABS(* [register]:2 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.8H, 5, 2, 16);
-	simd_address_at(tmp2, Rd_VPR128.8H, 5, 2, 16);
-	* [register]:2 tmp2 = MP_INT_ABS(* [register]:2 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.8H, 6, 2, 16);
-	simd_address_at(tmp2, Rd_VPR128.8H, 6, 2, 16);
-	* [register]:2 tmp2 = MP_INT_ABS(* [register]:2 tmp1);
-	simd_address_at(tmp1, Rn_VPR128.8H, 7, 2, 16);
-	simd_address_at(tmp2, Rd_VPR128.8H, 7, 2, 16);
-	* [register]:2 tmp2 = MP_INT_ABS(* [register]:2 tmp1);
+	Rd_VPR128.8H[0,16] = MP_INT_ABS(Rn_VPR128.8H[0,16]);
+	Rd_VPR128.8H[16,16] = MP_INT_ABS(Rn_VPR128.8H[16,16]);
+	Rd_VPR128.8H[32,16] = MP_INT_ABS(Rn_VPR128.8H[32,16]);
+	Rd_VPR128.8H[48,16] = MP_INT_ABS(Rn_VPR128.8H[48,16]);
+	Rd_VPR128.8H[64,16] = MP_INT_ABS(Rn_VPR128.8H[64,16]);
+	Rd_VPR128.8H[80,16] = MP_INT_ABS(Rn_VPR128.8H[80,16]);
+	Rd_VPR128.8H[96,16] = MP_INT_ABS(Rn_VPR128.8H[96,16]);
+	Rd_VPR128.8H[112,16] = MP_INT_ABS(Rn_VPR128.8H[112,16]);
 	zext_zq(Zd); # zero upper 16 bytes of Zd
 @elif defined(SEMANTIC_pcode)
 	local tmpd:16 = SIMD_INT_ABS(Rn_VPR128.8H, 2:1);
@@ -701,26 +621,11 @@ is b_3131=0 & q=0 & u=0 & b_2428=0xe & advSIMD3.size=2 & b_2121=1 & Rm_VPR128.2D
 {
 @if defined(SEMANTIC_primitive)
 	# simd infix TMPQ1 = Rn_VPR128.2D + Rm_VPR128.2D on lane size 8
-	local tmp2:4 = 0;
-	local tmp3:4 = 0;
-	local tmp4:4 = 0;
-	simd_address_at(tmp2, Rn_VPR128.2D, 0, 8, 16);
-	simd_address_at(tmp3, Rm_VPR128.2D, 0, 8, 16);
-	simd_address_at(tmp4, TMPQ1, 0, 8, 16);
-	* [register]:8 tmp4 = (* [register]:8 tmp2) + (* [register]:8 tmp3);
-	simd_address_at(tmp2, Rn_VPR128.2D, 1, 8, 16);
-	simd_address_at(tmp3, Rm_VPR128.2D, 1, 8, 16);
-	simd_address_at(tmp4, TMPQ1, 1, 8, 16);
-	* [register]:8 tmp4 = (* [register]:8 tmp2) + (* [register]:8 tmp3);
+	TMPQ1[0,64] = Rn_VPR128.2D[0,64] + Rm_VPR128.2D[0,64];
+	TMPQ1[64,64] = Rn_VPR128.2D[64,64] + Rm_VPR128.2D[64,64];
 	# simd shuffle Rd_VPR64.2S = TMPQ1 (@1-0@3-1) lane size 4
-	local tmp5:4 = 0;
-	local tmp6:4 = 0;
-	simd_address_at(tmp5, TMPQ1, 1, 4, 16);
-	simd_address_at(tmp6, Rd_VPR64.2S, 0, 4, 8);
-	* [register]:4 tmp6 = * [register]:4 tmp5;
-	simd_address_at(tmp5, TMPQ1, 3, 4, 16);
-	simd_address_at(tmp6, Rd_VPR64.2S, 1, 4, 8);
-	* [register]:4 tmp6 = * [register]:4 tmp5;
+	Rd_VPR64.2S[0,32] = TMPQ1[32,32];
+	Rd_VPR64.2S[32,32] = TMPQ1[96,32];
 	zext_zd(Zd); # zero upper 24 bytes of Zd
 @elif defined(SEMANTIC_pcode)
 	local tmp1:16 = SIMD_INT_ADD(Rn_VPR128.2D, Rm_VPR128.2D, 8:1);
@@ -2725,7 +2630,26 @@ is b_31=0 & b_30=0 & b_2429=0b101110 & b_2223=0b00 & b_21=1 & b_1015=0b100011 & 
 :cmeq Rd_VPR128.16B, Rn_VPR128.16B, Rm_VPR128.16B
 is b_31=0 & b_30=1 & b_2429=0b101110 & b_2223=0b00 & b_21=1 & b_1015=0b100011 & Rd_VPR128.16B & Rn_VPR128.16B & Rm_VPR128.16B & Zd
 {
-@if defined(SEMANTIC_pseudo) || defined(SEMANTIC_primitive) || defined(SEMANTIC_pcode)
+@if defined(SEMANTIC_primitive)
+	local tmp:1 = ~ 0:1;
+	Rd_VPR128.16B[0,8] = tmp * (Rn_VPR128.16B[0,8] == Rm_VPR128.16B[0,8]);
+	Rd_VPR128.16B[8,8] = tmp * (Rn_VPR128.16B[8,8] == Rm_VPR128.16B[8,8]);
+	Rd_VPR128.16B[16,8] = tmp * (Rn_VPR128.16B[16,8] == Rm_VPR128.16B[16,8]);
+	Rd_VPR128.16B[24,8] = tmp * (Rn_VPR128.16B[24,8] == Rm_VPR128.16B[24,8]);
+	Rd_VPR128.16B[32,8] = tmp * (Rn_VPR128.16B[32,8] == Rm_VPR128.16B[32,8]);
+	Rd_VPR128.16B[40,8] = tmp * (Rn_VPR128.16B[40,8] == Rm_VPR128.16B[40,8]);
+	Rd_VPR128.16B[48,8] = tmp * (Rn_VPR128.16B[48,8] == Rm_VPR128.16B[48,8]);
+	Rd_VPR128.16B[56,8] = tmp * (Rn_VPR128.16B[56,8] == Rm_VPR128.16B[56,8]);
+	Rd_VPR128.16B[64,8] = tmp * (Rn_VPR128.16B[64,8] == Rm_VPR128.16B[64,8]);
+	Rd_VPR128.16B[72,8] = tmp * (Rn_VPR128.16B[72,8] == Rm_VPR128.16B[72,8]);
+	Rd_VPR128.16B[80,8] = tmp * (Rn_VPR128.16B[80,8] == Rm_VPR128.16B[80,8]);
+	Rd_VPR128.16B[88,8] = tmp * (Rn_VPR128.16B[88,8] == Rm_VPR128.16B[88,8]);
+	Rd_VPR128.16B[96,8] = tmp * (Rn_VPR128.16B[96,8] == Rm_VPR128.16B[96,8]);
+	Rd_VPR128.16B[104,8] = tmp * (Rn_VPR128.16B[104,8] == Rm_VPR128.16B[104,8]);
+	Rd_VPR128.16B[112,8] = tmp * (Rn_VPR128.16B[112,8] == Rm_VPR128.16B[112,8]);
+	Rd_VPR128.16B[120,8] = tmp * (Rn_VPR128.16B[120,8] == Rm_VPR128.16B[120,8]);
+	zext_zq(Zd); # zero upper 16 bytes of Zd
+@elif defined(SEMANTIC_pseudo) || defined(SEMANTIC_pcode)
 	Rd_VPR128.16B = NEON_cmeq(Rn_VPR128.16B, Rm_VPR128.16B, 1:1);
 @endif
 }
