@@ -7469,7 +7469,7 @@ int4 RuleSubvarSubpiece::applyOp(PcodeOp *op,Funcdata &data)
   mask <<= 8*((int4)op->getIn(1)->getOffset());
   bool aggressive = outvn->isPtrFlow();
   if (!aggressive) {
-    if ((vn->getConsume() & mask) != vn->getConsume()) return 0;
+    if (mask != vn->getConsume()) return 0;
     if (op->getOut()->hasNoDescend()) return 0;
   }
   bool big = false;
