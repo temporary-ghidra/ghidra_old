@@ -579,35 +579,6 @@ bool ActionLaneDivide::processVarnode(Funcdata &data,Varnode *vn,const LanedRegi
 int4 ActionLaneDivide::apply(Funcdata &data)
 
 {
-  map<VarnodeData,const LanedRegister *>::const_iterator iter;
-  for(int4 mode=0;mode<3;++mode) {
-    bool allStorageProcessed = true;
-    for(iter=data.beginLaneAccess();iter!=data.endLaneAccess();++iter) {
-      const LanedRegister *lanedReg = (*iter).second;
-      Address addr = (*iter).first.getAddr();
-      int4 sz = (*iter).first.size;
-      VarnodeLocSet::const_iterator viter = data.beginLoc(sz,addr);
-      VarnodeLocSet::const_iterator venditer = data.endLoc(sz,addr);
-      bool allVarnodesProcessed = true;
-      while(viter != venditer) {
-	Varnode *vn = *viter;
-	if (processVarnode(data, vn, *lanedReg, mode)) {
-	  viter = data.beginLoc(sz,addr);
-	  venditer = data.endLoc(sz, addr);	// Recalculate bounds
-	  allVarnodesProcessed = true;
-	}
-	else {
-	  ++viter;
-	  allVarnodesProcessed = false;
-	}
-      }
-      if (!allVarnodesProcessed)
-	allStorageProcessed = false;
-    }
-    if (allStorageProcessed) break;
-  }
-  data.clearLanedAccessMap();
-  data.setLanedRegGenerated();
   return 0;
 }
 
