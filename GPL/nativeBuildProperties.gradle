@@ -24,6 +24,14 @@ model {
 		vc(VisualCpp) {
 			installDir "C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools"
 		}
+		clang(Clang) {
+			path "C:\\msys64\\mingw64\\bin"
+			eachPlatform {
+				cppCompiler.withArguments { args ->
+					args << "-D _WINDOWS -D _WIN64"
+				}
+			}
+		}
 	}
 	// define the platforms that we support in ghidra
 	platforms {
