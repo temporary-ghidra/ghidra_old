@@ -226,9 +226,9 @@ define register offset=0x1600 size=4   [
   xmmTmp2_Da  xmmTmp2_Db  xmmTmp2_Dc  xmmTmp2_Dd
 ];
 
-define register offset=0x1700 size=8   [ k0 k1 k2 k3 k4 k5 k6 k7 ];
+define register offset=0x1700 size=64  [ zmmTmp1 zmmTmp2 ];
 
-
+define register offset=0x1780 size=8   [ k0 k1 k2 k3 k4 k5 k6 k7 ];
 
 # Define context bits
 define register offset=0x2000 size=8   contextreg;
@@ -423,6 +423,7 @@ define token modrm (8)
   bnd2          = (0,2)
   bnd2_lb       = (0,2)
   bnd2_ub       = (0,2)
+  kdest         = (3,5)
 
   evex_a        = (0,2)
   evex_l        = (5,6)
@@ -494,6 +495,8 @@ attach variables [ vexVVVV_XmmReg Xmm_imm8_7_4 ] [ XMM0 XMM1 XMM2 XMM3 XMM4 XMM5
 
 attach variables [ vexVVVV_YmmReg Ymm_imm8_7_4 ] [ YMM0 YMM1 YMM2 YMM3 YMM4 YMM5 YMM6 YMM7 YMM8 YMM9 YMM10 YMM11 YMM12 YMM13 YMM14 YMM15 ];
 
+attach variables [ vexVVVV_ZmmReg ]              [ ZMM0 ZMM1 ZMM2 ZMM3 ZMM4 ZMM5 ZMM6 ZMM7 ZMM8 ZMM9 ZMM10 ZMM11 ZMM12 ZMM13 ZMM14 ZMM15 ];
+
 @ifdef IA64
 attach variables [ vexVVVV_r32 ] [ EAX  ECX  EDX  EBX  ESP  EBP  ESI  EDI R8D  R9D  R10D R11D R12D R13D R14D R15D ];
 attach variables [ vexVVVV_r64 ] [ RAX  RCX  RDX  RBX  RSP  RBP  RSI  RDI R8   R9   R10  R11  R12  R13  R14  R15 ];
@@ -509,7 +512,7 @@ attach variables [ bnd1 bnd2 ]       [ BND0 BND1 BND2 BND3 _ _ _ _ ];
 attach variables [ bnd1_lb bnd2_lb ] [ BND0_LB BND1_LB BND2_LB BND3_LB _ _ _ _ ];
 attach variables [ bnd1_ub bnd2_ub ] [ BND0_UB BND1_UB BND2_UB BND3_UB _ _ _ _ ];
 
-attach variables [ kreg ] [ _ k1 k2 k3 k4 k5 k6 k7 ];
+attach variables [ kreg kdest ] [ k0 k1 k2 k3 k4 k5 k6 k7 ];
 
 attach variables [ zmmreg1 zmmreg2 ] [ ZMM0 ZMM1 ZMM2 ZMM3 ZMM4 ZMM5 ZMM6 ZMM7 ];
 attach variables [ zmmreg1_x zmmreg2_x ] [ ZMM8 ZMM9 ZMM10 ZMM11 ZMM12 ZMM13 ZMM14 ZMM15 ];
@@ -1606,13 +1609,13 @@ macro fucompe(val1, val2) {
 @define EVEX_L512	"evexL=2"
 
 :^instruction is instrPhase=0 & vexMode=0 & rexprefix=0 & byte=0x62; vex_r & vex_x & vex_b & vex_mmmmm; vex_w & vex_vvvv & vex_pp=0; evex_a & evex_l & evex_z; instruction
-[ vexMode=2; rexRprefix=~vex_r; rexXprefix=~vex_x; rexBprefix=~vex_b; vexMMMMM=vex_mmmmm; rexWprefix=vex_w; vexVVVV=~vex_vvvv; evexkreg=evex_a; evexL=evex_l; ] {}
+[ instrPhase=1; vexMode=2; rexRprefix=~vex_r; rexXprefix=~vex_x; rexBprefix=~vex_b; vexMMMMM=vex_mmmmm; rexWprefix=vex_w; vexVVVV=~vex_vvvv; evexkreg=evex_a; evexL=evex_l; ] {}
 :^instruction is instrPhase=0 & vexMode=0 & rexprefix=0 & byte=0x62; vex_r & vex_x & vex_b & vex_mmmmm; vex_w & vex_vvvv & vex_pp=1; evex_a & evex_l & evex_z; instruction
-[ vexMode=2; rexRprefix=~vex_r; rexXprefix=~vex_x; rexBprefix=~vex_b; vexMMMMM=vex_mmmmm; rexWprefix=vex_w; vexVVVV=~vex_vvvv; evexkreg=evex_a; evexL=evex_l; prefix_66=1; ] {}
+[ instrPhase=1; vexMode=2; rexRprefix=~vex_r; rexXprefix=~vex_x; rexBprefix=~vex_b; vexMMMMM=vex_mmmmm; rexWprefix=vex_w; vexVVVV=~vex_vvvv; evexkreg=evex_a; evexL=evex_l; prefix_66=1; ] {}
 :^instruction is instrPhase=0 & vexMode=0 & rexprefix=0 & byte=0x62; vex_r & vex_x & vex_b & vex_mmmmm; vex_w & vex_vvvv & vex_pp=2; evex_a & evex_l & evex_z; instruction
-[ vexMode=2; rexRprefix=~vex_r; rexXprefix=~vex_x; rexBprefix=~vex_b; vexMMMMM=vex_mmmmm; rexWprefix=vex_w; vexVVVV=~vex_vvvv; evexkreg=evex_a; evexL=evex_l; prefix_f3=1; ] {}
+[ instrPhase=1; vexMode=2; rexRprefix=~vex_r; rexXprefix=~vex_x; rexBprefix=~vex_b; vexMMMMM=vex_mmmmm; rexWprefix=vex_w; vexVVVV=~vex_vvvv; evexkreg=evex_a; evexL=evex_l; prefix_f3=1; ] {}
 :^instruction is instrPhase=0 & vexMode=0 & rexprefix=0 & byte=0x62; vex_r & vex_x & vex_b & vex_mmmmm; vex_w & vex_vvvv & vex_pp=3; evex_a & evex_l & evex_z; instruction
-[ vexMode=2; rexRprefix=~vex_r; rexXprefix=~vex_x; rexBprefix=~vex_b; vexMMMMM=vex_mmmmm; rexWprefix=vex_w; vexVVVV=~vex_vvvv; evexkreg=evex_a; evexL=evex_l; prefix_f2=1; ] {}
+[ instrPhase=1; vexMode=2; rexRprefix=~vex_r; rexXprefix=~vex_x; rexBprefix=~vex_b; vexMMMMM=vex_mmmmm; rexWprefix=vex_w; vexVVVV=~vex_vvvv; evexkreg=evex_a; evexL=evex_l; prefix_f2=1; ] {}
 
 # Many of the multimedia instructions have a "mandatory" prefix, either 0x66, 0xf2 or 0xf3
 # where the prefix really becomes part of the encoding.  We collect the three possible prefixes of this
