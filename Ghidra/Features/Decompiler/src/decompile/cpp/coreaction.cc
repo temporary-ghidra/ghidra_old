@@ -579,7 +579,7 @@ bool ActionLaneDivide::processVarnode(Funcdata &data,Varnode *vn,const LanedRegi
 int4 ActionLaneDivide::apply(Funcdata &data)
 
 {
-  /*map<VarnodeData,const LanedRegister *>::const_iterator iter;
+  map<VarnodeData,const LanedRegister *>::const_iterator iter;
   for(int4 mode=0;mode<3;++mode) {
     bool allStorageProcessed = true;
     for(iter=data.beginLaneAccess();iter!=data.endLaneAccess();++iter) {
@@ -607,7 +607,7 @@ int4 ActionLaneDivide::apply(Funcdata &data)
     if (allStorageProcessed) break;
   }
   data.clearLanedAccessMap();
-  data.setLanedRegGenerated();*/
+  data.setLanedRegGenerated();
   return 0;
 }
 
@@ -5045,7 +5045,7 @@ void ActionDatabase::universalAction(Architecture *conf)
 	conf->extra_pool_rules.clear(); // Rules are now absorbed into universal
       }
       actstackstall->addAction( actprop );
-      actstackstall->addAction( new ActionLaneDivide("base") );
+      //  actstackstall->addAction( new ActionLaneDivide("base") );
       actstackstall->addAction( new ActionMultiCse("analysis") );
       actstackstall->addAction( new ActionShadowVar("analysis") );
       actstackstall->addAction( new ActionDeindirect("deindirect") );
