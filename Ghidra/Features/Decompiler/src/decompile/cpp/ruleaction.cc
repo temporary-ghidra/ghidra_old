@@ -4601,6 +4601,7 @@ int4 RuleSubZext::applyOp(PcodeOp *op,Funcdata &data)
   uintb val;
 
   subvn = op->getIn(0);
+  if (subvn->getSize() > 8) return 0; // No array masking is allowed
   if (!subvn->isWritten()) return 0;
   subop = subvn->getDef();
   if (subop->code() == CPUI_SUBPIECE) {
@@ -6466,7 +6467,7 @@ void RuleSubRight::getOpList(vector<uint4> &oplist) const
 int4 RuleSubRight::applyOp(PcodeOp *op,Funcdata &data)
 
 {
-  if (op->getIn(0)->getSize() > 8) return 0; // No array shifts allowed
+  if (op->getIn(0)->getSize() > 8) return 0; // No array shifts are allowed
   int4 c = op->getIn(1)->getOffset();
   if (c==0) return 0;		// SUBPIECE is not least sig
   Varnode *a = op->getIn(0);
