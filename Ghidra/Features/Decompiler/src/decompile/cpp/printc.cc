@@ -364,11 +364,40 @@ void PrintC::opFunc(const PcodeOp *op)
     pushAtom(Atom("",blanktoken,EmitXml::no_color));
 }
 
+void PrintC::opArrFunc(const PcodeOp *op)
+{
+  pushOp(&function_call,op);
+  string nm = op->getOpcode()->getOperatorName(op);
+  pushAtom(Atom(nm,optoken,EmitXml::no_color,op));
+  if (op->numInput() == 2) {
+    pushOp(&comma,op);
+    if (op->getOut()->getHigh()->getType()->getMetatype() == TYPE_ARRAY) {
+      pushVnImplied(op->getIn(1),op,mods);
+      pushVnImplied(op->getIn(0),op,mods);
+    }
+    else {
+      pushVnImplied(op->getIn(0),op,mods);
+      pushOp(&comma,op);
+      pushVnImplied(op->getIn(1),op,mods);
+      pushType(op->getOut()->getHigh()->getType());
+    }
+  }
+  else {
+    if (op->getOut()->getHigh()->getType()->getMetatype() == TYPE_ARRAY)
+      pushVnImplied(op->getIn(0),op,mods);
+    else {
+      pushOp(&comma,op);
+      pushVnImplied(op->getIn(0),op,mods);
+      pushType(op->getOut()->getHigh()->getType());
+    }
+  }
+}
+
 void PrintC::opConv(const PcodeOp *op)
 
 {
   pushOp(&function_call,op);
-  pushAtom(Atom("CONVERT",optoken,EmitXml::funcname_color,op));
+  pushAtom(Atom("CONVERT",optoken,EmitXml::no_color,op));
   pushOp(&comma,op);
   pushVnImplied(op->getIn(0),op,mods);
   pushType(op->getOut()->getHigh()->getType());
@@ -381,9 +410,9 @@ void PrintC::opConv(const PcodeOp *op)
 void PrintC::opTypeCast(const PcodeOp *op)
 
 {
-  if (!option_nocasts) {
+  if (!option_nocasts && op->getOut()->getHigh()->getType()->getName() != op->getIn(0)->getHigh()->getType()->getName()) {
     pushOp(&function_call,op);
-    pushAtom(Atom("CAST",optoken,EmitXml::funcname_color,op));
+    pushAtom(Atom("CAST",optoken,EmitXml::no_color,op));
     pushOp(&comma,op);
     pushVnImplied(op->getIn(0),op,mods);
     pushType(op->getOut()->getHigh()->getType());
@@ -696,7 +725,7 @@ void PrintC::opIntZext(const PcodeOp *op,const PcodeOp *readOp)
       opConv(op);
   }
   else
-    opFunc(op);
+    opArrFunc(op);
 }
 
 void PrintC::opIntSext(const PcodeOp *op,const PcodeOp *readOp)
@@ -709,7 +738,7 @@ void PrintC::opIntSext(const PcodeOp *op,const PcodeOp *readOp)
       opConv(op);
   }
   else
-    opFunc(op);
+    opArrFunc(op);
 }
 
 /// Print the BOOL_NEGATE but check for opportunities to flip the next operator instead
@@ -738,7 +767,7 @@ void PrintC::opSubpiece(const PcodeOp *op)
 				   (uint4)op->getIn(1)->getOffset()))
     opConv(op);
   else
-    opFunc(op);
+    opArrFunc(op);
 }
 
 void PrintC::opPtradd(const PcodeOp *op)
