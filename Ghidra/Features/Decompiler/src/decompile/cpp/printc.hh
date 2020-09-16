@@ -158,6 +158,7 @@ protected:
   void emitCommentGroup(const PcodeOp *inst);		///< Emit comments associated with a given statement
   void emitCommentFuncHeader(const Funcdata *fd);	///< Emit comments in the given function's header
   void opFunc(const PcodeOp *op);			///< Push a \e functional expression based on the given p-code op to the RPN stack
+  void opArrFunc(const PcodeOp *op);
   void opConv(const PcodeOp *op);
   void opTypeCast(const PcodeOp *op);			///< Push the given p-code op using type-cast syntax to the RPN stack
   void opHiddenFunc(const PcodeOp *op);			///< Push the given p-code op as a hidden token
@@ -286,7 +287,7 @@ public:
   virtual void opFloatRound(const PcodeOp *op) { opFunc(op); }
   virtual void opMultiequal(const PcodeOp *op) {}
   virtual void opIndirect(const PcodeOp *op) {}
-  virtual void opPiece(const PcodeOp *op) { opFunc(op); }
+  virtual void opPiece(const PcodeOp *op) { opArrFunc(op); }
   virtual void opSubpiece(const PcodeOp *op);
   virtual void opCast(const PcodeOp *op) { opTypeCast(op); }
   virtual void opPtradd(const PcodeOp *op);
