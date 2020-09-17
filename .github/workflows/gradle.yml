@@ -46,23 +46,6 @@ jobs:
           Rename-Item (Get-Command win_bison).Path bison.exe
         if: ${{ matrix.os == 'windows-latest' }}
 
-      - name: Apply Ghidra patches
-        working-directory: ghidra/upstream
-        shell: pwsh
-        run: |
-          git config --global user.name "Gary Tierney"
-          git config --global user.email "gary.tierney+ghidra-automation@fastmail.com"
-
-          foreach ($uri in Get-Content ..\patches.txt) {
-              if (!$uri.StartsWith('#')){
-                  echo "Applying $uri"
-
-                  Invoke-WebRequest -UseBasicParsing $uri -OutFile latest.patch
-                  git am latest.patch
-                  rm latest.patch
-              }
-          }
-
       - name: Download Ghidra dependency repository
         working-directory: ghidra/upstream
         run: |
