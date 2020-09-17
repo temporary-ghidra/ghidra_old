@@ -1,0 +1,123 @@
+name: Build distributions and container images
+on: push
+jobs:
+  build_distribution:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: "recursive"
+
+      - name: Install Java 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: '11'
+          java-package: jdk
+          architecture: x64
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle', '**/settings.gradle') }}
+          restore-keys: ${{ runner.os }}-gradle
+
+      - name: Cache Ghidra dependency repository
+        uses: actions/cache@v2
+        with:
+          path: ghidra/upstream/flatRepo
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/fetchDependencies.gradle') }}
+          restore-keys: ${{ runner.os }}-gradle
+
+      - name: Install dependencies [${{ matrix.os }}]
+        uses: crazy-max/ghaction-chocolatey@v1
+        with:
+          args: install -y winflexbison
+        if: ${{ matrix.os == 'windows-latest' }}
+
+      - name: Fix win_flex.exe and win_bison.exe command names
+        run: |
+          Rename-Item (Get-Command win_flex).Path flex.exe
+          Rename-Item (Get-Command win_bison).Path bison.exe
+        if: ${{ matrix.os == 'windows-latest' }}
+
+      - name: Apply Ghidra patches
+        working-directory: ghidra/upstream
+        shell: pwsh
+        run: |
+          git config --global user.name "Gary Tierney"
+          git config --global user.email "gary.tierney+ghidra-automation@fastmail.com"
+
+          foreach ($uri in Get-Content ..\patches.txt) {
+              if (!$uri.StartsWith('#')){
+                  echo "Applying $uri"
+
+                  Invoke-WebRequest -UseBasicParsing $uri -OutFile latest.patch
+                  git am latest.patch
+                  rm latest.patch
+              }
+          }
+
+      - name: Download Ghidra dependency repository
+        working-directory: ghidra/upstream
+        run: |
+          gradle --init-script gradle/support/fetchDependencies.gradle init --quiet 2>&1 > ghidra-dependencies.log
+        env:
+          GRADLE_OPTS:  -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.daemon=false
+
+      - name: Build Ghidra
+        working-directory: ghidra/upstream
+        run: |
+          gradle buildGhidra
+        env:
+          GRADLE_OPTS: -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.daemon=false
+
+      - name: Unpack archive for out of tree extension builds
+        working-directory: ghidra/upstream
+        shell: pwsh
+        run: |
+          Expand-Archive -Path build/dist/*.zip -DestinationPath exploded
+
+      - name: Build C++ Class Analyzer
+        working-directory: ghidra/ext-cpp-class-analyzer
+        run: |
+          gradle buildExtension
+          mv dist/*.zip "${{ github.workspace }}/ghidra/upstream/exploded/ghidra_9.2_DEV/Extensions/Ghidra"
+        env:
+          GHIDRA_INSTALL_DIR: ${{ github.workspace }}/ghidra/upstream/exploded/ghidra_9.2_DEV/
+
+      - name: Build ret-sync
+        working-directory: ghidra/ext-ret-sync/ext_ghidra
+        run: |
+          rm dist/*.zip
+          gradle buildExtension
+          mv dist/*.zip "${{ github.workspace }}/ghidra/upstream/exploded/ghidra_9.2_DEV/Extensions/Ghidra"
+        env:
+          GHIDRA_INSTALL_DIR: ${{ github.workspace }}/ghidra/upstream/exploded/ghidra_9.2_DEV/
+
+      - name: Repack Ghidra archive with additions
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "${{ github.workspace }}/ghidra/upstream/exploded/ghidra_9.2_DEV" -DestinationPath ghidra.zip
+          mkdir -p public/builds/
+          cp ghidra.zip ghidra-${{ matrix.os }}.zip
+
+      - name: Archive distribution
+        uses: actions/upload-artifact@v2
+        with:
+          name: ghidra-distribution-${{ matrix.os }}
+          path: ghidra.zip
+
+      - name: Upload distribution to Azure
+        uses: fixpoint/azblob-upload-artifact@v4
+        with:
+          connection-string: ${{ secrets.AZURE_CONNECTION_STRING }}
+          name: builds
+          path: ghidra-${{ matrix.os }}.zip
+          container: "$web"
+        if: ${{ github.ref == 'refs/heads/master' }}
