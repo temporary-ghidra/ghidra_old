@@ -50,19 +50,9 @@ jobs:
           GRADLE_OPTS: -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.daemon=false
 
       - name: Unpack archive for out of tree extension builds
-        working-directory: ghidra/upstream
         shell: pwsh
         run: |
           Expand-Archive -Path build/dist/*.zip -DestinationPath exploded
-
-      - name: Build ret-sync
-        working-directory: ghidra/ext-ret-sync/ext_ghidra
-        run: |
-          rm dist/*.zip
-          gradle buildExtension
-          mv dist/*.zip "${{ github.workspace }}/ghidra/upstream/exploded/ghidra_9.2_DEV/Extensions/Ghidra"
-        env:
-          GHIDRA_INSTALL_DIR: ${{ github.workspace }}/ghidra/upstream/exploded/ghidra_9.2_DEV/
 
       - name: Repack Ghidra archive with additions
         shell: pwsh
