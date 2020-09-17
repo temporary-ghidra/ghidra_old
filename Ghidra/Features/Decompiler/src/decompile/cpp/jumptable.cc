@@ -2213,7 +2213,7 @@ JumpTable::JumpTable(Architecture *g,Address ad)
   switchVarConsume = ~((uintb)0);
   defaultBlock = -1;
   lastBlock = -1;
-  maxtablesize = 1024;
+  maxtablesize = 1000000;
   maxaddsub = 1;
   maxleftright = 1;
   maxext = 1;
