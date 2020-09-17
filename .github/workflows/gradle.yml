@@ -4,7 +4,7 @@ jobs:
   build_distribution:
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [macos-latest, windows-latest, ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -66,12 +66,3 @@ jobs:
         with:
           name: ghidra-distribution-${{ matrix.os }}
           path: ghidra.zip
-
-      - name: Upload distribution to Azure
-        uses: fixpoint/azblob-upload-artifact@v4
-        with:
-          connection-string: ${{ secrets.AZURE_CONNECTION_STRING }}
-          name: builds
-          path: ghidra-${{ matrix.os }}.zip
-          container: "$web"
-        if: ${{ github.ref == 'refs/heads/master' }}
