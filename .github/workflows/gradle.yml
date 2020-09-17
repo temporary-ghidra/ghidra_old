@@ -28,11 +28,8 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle
 
       - name: Cache Ghidra dependency repository
-        uses: actions/cache@v2
-        with:
-          path: ghidra/upstream/flatRepo
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/fetchDependencies.gradle') }}
-          restore-keys: ${{ runner.os }}-gradle
+        run: |
+          gradle --init-script gradle/support/fetchDependencies.gradle init
 
       - name: Install dependencies [${{ matrix.os }}]
         uses: crazy-max/ghaction-chocolatey@v1
