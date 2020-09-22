@@ -8,30 +8,83 @@
 	Reg32 = zext(kin:2);
 }
 
-:VMOVDQU64 ZmmReg1, ZmmReg2_m512 is $(EVEX_NONE) & $(EVEX_L512) & $(PRE_F3) & $(VEX_0F) & $(VEX_W1) & kreg=0; byte=0x6F; ZmmReg1 ... & ZmmReg2_m512 [ evexFactor=0x40; ]
+:VMOVDQA64 ZmmReg1, ZmmReg2_m512 is $(EVEX_NONE) & $(EVEX_L512) & $(PRE_66) & $(VEX_0F) & $(VEX_W1) & kreg=0; byte=0x6F; ZmmReg1 ... & ZmmReg2_m512 [ evexFactor=0x40; ]
 {
-	local m:64 = ZmmReg2_m512;
-	ZmmReg1[0,64] = m[0,64];
-	ZmmReg1[64,64] = m[64,64];
-	ZmmReg1[128,64] = m[128,64];
-	ZmmReg1[192,64] = m[192,64];
-	ZmmReg1[256,64] = m[256,64];
-	ZmmReg1[320,64] = m[320,64];
-	ZmmReg1[384,64] = m[384,64];
-	ZmmReg1[448,64] = m[448,64];
+	zmmTmp1 = ZmmReg2_m512;
+	ZmmReg1[0,64] = zmmTmp1[0,64];
+	ZmmReg1[64,64] = zmmTmp1[64,64];
+	ZmmReg1[128,64] = zmmTmp1[128,64];
+	ZmmReg1[192,64] = zmmTmp1[192,64];
+	ZmmReg1[256,64] = zmmTmp1[256,64];
+	ZmmReg1[320,64] = zmmTmp1[320,64];
+	ZmmReg1[384,64] = zmmTmp1[384,64];
+	ZmmReg1[448,64] = zmmTmp1[448,64];
 }
 
-:VMOVDQU64 ZmmReg2_m512, ZmmReg1 is $(EVEX_NONE) & $(EVEX_L512) & $(PRE_F3) & $(VEX_0F) & $(VEX_W1) & kreg=0; byte=0x7f; ZmmReg1 ... & ZmmReg2_m512 [ evexFactor=0x40; ]
+:VMOVDQA64 ZmmReg1 "{"kreg"}", ZmmReg2_m512 is $(EVEX_NONE) & $(EVEX_L512) & $(PRE_66) & $(VEX_0F) & $(VEX_W1) & kreg; byte=0x6F; ZmmReg1 ... & ZmmReg2_m512 [ evexFactor=0x40; ]
 {
-	zmmTmp2[0,64] = ZmmReg1[0,64];
-	zmmTmp2[64,64] = ZmmReg1[64,64];
-	zmmTmp2[128,64] = ZmmReg1[128,64];
-	zmmTmp2[192,64] = ZmmReg1[192,64];
-	zmmTmp2[256,64] = ZmmReg1[256,64];
-	zmmTmp2[320,64] = ZmmReg1[320,64];
-	zmmTmp2[384,64] = ZmmReg1[384,64];
-	zmmTmp2[448,64] = ZmmReg1[448,64];
-	ZmmReg2_m512 = zmmTmp2;
+	zmmTmp1 = ZmmReg2_m512;
+	ZmmReg1[0,64] = zmmTmp1[0,64] * (kreg & 1) | ZmmReg1[0,64] * (~kreg & 1);
+	ZmmReg1[64,64] = zmmTmp1[64,64] * (kreg >> 1 & 1) | ZmmReg1[64,64] * (~kreg >> 1 & 1);
+	ZmmReg1[128,64] = zmmTmp1[128,64] * (kreg >> 2 & 1) | ZmmReg1[128,64] * (~kreg >> 2 & 1);
+	ZmmReg1[192,64] = zmmTmp1[192,64] * (kreg >> 3 & 1) | ZmmReg1[192,64] * (~kreg >> 3 & 1);
+	ZmmReg1[256,64] = zmmTmp1[256,64] * (kreg >> 4 & 1) | ZmmReg1[256,64] * (~kreg >> 4 & 1);
+	ZmmReg1[320,64] = zmmTmp1[320,64] * (kreg >> 5 & 1) | ZmmReg1[320,64] * (~kreg >> 5 & 1);
+	ZmmReg1[384,64] = zmmTmp1[384,64] * (kreg >> 6 & 1) | ZmmReg1[384,64] * (~kreg >> 6 & 1);
+	ZmmReg1[448,64] = zmmTmp1[448,64] * (kreg >> 7 & 1) | ZmmReg1[448,64] * (~kreg >> 7 & 1);
+}
+
+:VMOVDQA64 ZmmReg2_m512, ZmmReg1 is $(EVEX_NONE) & $(EVEX_L512) & $(PRE_66) & $(VEX_0F) & $(VEX_W1) & kreg=0; byte=0x7F; ZmmReg1 ... & ZmmReg2_m512 [ evexFactor=0x40; ]
+{
+	zmmTmp1[0,64] = ZmmReg1[0,64];
+	zmmTmp1[64,64] = ZmmReg1[64,64];
+	zmmTmp1[128,64] = ZmmReg1[128,64];
+	zmmTmp1[192,64] = ZmmReg1[192,64];
+	zmmTmp1[256,64] = ZmmReg1[256,64];
+	zmmTmp1[320,64] = ZmmReg1[320,64];
+	zmmTmp1[384,64] = ZmmReg1[384,64];
+	zmmTmp1[448,64] = ZmmReg1[448,64];
+	ZmmReg2_m512 = zmmTmp1;
+}
+
+:VMOVDQA64 ZmmReg2_m512 "{"kreg"}", ZmmReg1 is $(EVEX_NONE) & $(EVEX_L512) & $(PRE_66) & $(VEX_0F) & $(VEX_W1) & kreg; byte=0x7F; ZmmReg1 ... & ZmmReg2_m512 [ evexFactor=0x40; ]
+{
+	zmmTmp1 = ZmmReg2_m512;
+	zmmTmp1[0,64] = ZmmReg1[0,64] * (kreg & 1) | zmmTmp1[0,64] * (~kreg & 1);
+	zmmTmp1[64,64] = ZmmReg1[64,64] * (kreg >> 1 & 1) | zmmTmp1[64,64] * (~kreg >> 1 & 1);
+	zmmTmp1[128,64] = ZmmReg1[128,64] * (kreg >> 2 & 1) | zmmTmp1[128,64] * (~kreg >> 2 & 1);
+	zmmTmp1[192,64] = ZmmReg1[192,64] * (kreg >> 3 & 1) | zmmTmp1[192,64] * (~kreg >> 3 & 1);
+	zmmTmp1[256,64] = ZmmReg1[256,64] * (kreg >> 4 & 1) | zmmTmp1[256,64] * (~kreg >> 4 & 1);
+	zmmTmp1[320,64] = ZmmReg1[320,64] * (kreg >> 5 & 1) | zmmTmp1[320,64] * (~kreg >> 5 & 1);
+	zmmTmp1[384,64] = ZmmReg1[384,64] * (kreg >> 6 & 1) | zmmTmp1[384,64] * (~kreg >> 6 & 1);
+	zmmTmp1[448,64] = ZmmReg1[448,64] * (kreg >> 7 & 1) | zmmTmp1[448,64] * (~kreg >> 7 & 1);
+	ZmmReg2_m512 = zmmTmp1;
+}
+
+:VMOVDQU64 ZmmReg1, ZmmReg2_m512 is $(EVEX_NONE) & $(EVEX_L512) & $(PRE_F3) & $(VEX_0F) & $(VEX_W1) & kreg=0; byte=0x6F; ZmmReg1 ... & ZmmReg2_m512 [ evexFactor=0x40; ]
+{
+	zmmTmp1 = ZmmReg2_m512;
+	ZmmReg1[0,64] = zmmTmp1[0,64];
+	ZmmReg1[64,64] = zmmTmp1[64,64];
+	ZmmReg1[128,64] = zmmTmp1[128,64];
+	ZmmReg1[192,64] = zmmTmp1[192,64];
+	ZmmReg1[256,64] = zmmTmp1[256,64];
+	ZmmReg1[320,64] = zmmTmp1[320,64];
+	ZmmReg1[384,64] = zmmTmp1[384,64];
+	ZmmReg1[448,64] = zmmTmp1[448,64];
+}
+
+:VMOVDQU64 ZmmReg2_m512, ZmmReg1 is $(EVEX_NONE) & $(EVEX_L512) & $(PRE_F3) & $(VEX_0F) & $(VEX_W1) & kreg=0; byte=0x7F; ZmmReg1 ... & ZmmReg2_m512 [ evexFactor=0x40; ]
+{
+	zmmTmp1[0,64] = ZmmReg1[0,64];
+	zmmTmp1[64,64] = ZmmReg1[64,64];
+	zmmTmp1[128,64] = ZmmReg1[128,64];
+	zmmTmp1[192,64] = ZmmReg1[192,64];
+	zmmTmp1[256,64] = ZmmReg1[256,64];
+	zmmTmp1[320,64] = ZmmReg1[320,64];
+	zmmTmp1[384,64] = ZmmReg1[384,64];
+	zmmTmp1[448,64] = ZmmReg1[448,64];
+	ZmmReg2_m512 = zmmTmp1;
 }
 
 :VPBROADCASTD ZmmReg1, Rmr32 is $(EVEX_NONE) & $(EVEX_L512) & $(PRE_66) & $(VEX_0F38) & $(VEX_W0) & kreg=0; byte=0x7C; mod=0x3 & Rmr32 & ZmmReg1
@@ -75,15 +128,14 @@
 	kout[15,1] = vexVVVV_ZmmReg[480,32] s> ZmmReg2[480,32];
 }
 
-:VPCOMPRESSD ZmmReg2_m512"{"kreg"}", ZmmReg1 is $(EVEX_NONE) & $(EVEX_L512) & $(PRE_66) & $(VEX_0F38) & $(VEX_W0) & kreg; byte=0x8B; ZmmReg1 ... & ZmmReg2_m512
+:VPCOMPRESSD ZmmReg2_m512 "{"kreg"}", ZmmReg1 is $(EVEX_NONE) & $(EVEX_L512) & $(PRE_66) & $(VEX_0F38) & $(VEX_W0) & kreg; byte=0x8B; ZmmReg1 ... & ZmmReg2_m512
 {
 	zmmTmp1 = ZmmReg1;
 	zmmTmp2 = ZmmReg2_m512;
-	local k:8 = kreg;
 	local i:2 = 0;
 	local j:2 = 0;
 	<loop>
-		if ((k & 1) == 0) goto <skipall>;
+		if ((kreg >> i & 1) == 0) goto <skipall>;
 			if (j != 0) goto <skip0>;
 				zmmTmp2[0,32] = zmmTmp1:4;
 			<skip0>
@@ -136,7 +188,6 @@
 		<skipall>
 		local tmp:60 = zmmTmp1(4);
 		zmmTmp1 = zext(tmp);
-		k = k >> 1;
 		i = i + 1;
 	if (i < 16) goto <loop>;
 	ZmmReg2_m512 = zmmTmp2;
