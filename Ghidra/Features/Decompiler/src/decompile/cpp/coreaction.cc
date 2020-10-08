@@ -4267,7 +4267,7 @@ Datatype *ActionInferTypes::propagateAddIn2Out(TypeFactory *typegrp,PcodeOp *op,
   sign_extend(soffset, pt->getSize()*8-1);
   if(pt->getShiftOffset() != 0 && soffset == -pt->getShiftOffset()) // Do we create an unshifted pointer?
     return typegrp->getTypePointer(pt->getSize(),pt->getPtrTo(),pt->getWordSize());
-  if (tstruct->getSize() > 0)
+  if (tstruct->getSize() > 0 && !tstruct->isVariableLength())
     uoffset = uoffset % tstruct->getSize();
   if (uoffset==0) {
     if (op->code() == CPUI_PTRSUB) // Go down at least one level
