@@ -4442,7 +4442,7 @@ bool ActionInferTypes::propagateTypeEdge(TypeFactory *typegrp,PcodeOp *op,int4 i
     }
     else if (alttype->getMetatype()==TYPE_PTR) {
       newtype = ((TypePointer *)alttype)->getPtrTo();
-      if (newtype->getSize() != outvn->getTempType()->getSize()) // Size must be appropriate
+      if (newtype->getSize() != outvn->getTempType()->getSize() || newtype->isVariableLength()) // Size must be appropriate
 	newtype = outvn->getTempType();
     }
     else
@@ -4455,7 +4455,7 @@ bool ActionInferTypes::propagateTypeEdge(TypeFactory *typegrp,PcodeOp *op,int4 i
     }
     else if (alttype->getMetatype()==TYPE_PTR) {
       newtype = ((TypePointer *)alttype)->getPtrTo();
-      if (newtype->getSize() != outvn->getTempType()->getSize())
+      if (newtype->getSize() != outvn->getTempType()->getSize() || newtype->isVariableLength())
 	newtype = outvn->getTempType();
     }
     else
