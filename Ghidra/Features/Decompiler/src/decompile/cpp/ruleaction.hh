@@ -46,7 +46,7 @@ class AddTreeState {
   const TypePointer *ct;	///< The pointer data-type
   const Datatype *baseType;	///< The base data-type being pointed at
   int4 ptrsize;			///< Size of the pointer
-  int4 size;			///< Size of data-type being pointed to (in address units)
+  int4 size;			///< Size of data-type being pointed to (in address units) or 0 for open ended pointer
   intb shiftOffset; ///< Shift offset of the pointer (in address units)
   uintb ptrmask;		///< Mask for modulo calculations in ptr space
   uintb offset;			///< Number of bytes we dig into the base data-type
