@@ -61,9 +61,9 @@ public class PdbUniversalAnalyzer extends AbstractAnalyzer {
 	//==============================================================================================
 	static final String NAME = "PDB Universal";
 	// TODO: decide which PDB Analyzer should be enabled by default for release
-	static final boolean DEFAULT_ENABLEMENT = false;
+	static final boolean DEFAULT_ENABLEMENT = true;
 	private static final String DESCRIPTION =
-		"[Prototype V1] Platform-indepent PDB analyzer (No XML support).\n" +
+		"Platform-indepent PDB analyzer (No XML support).\n" +
 			"NOTE: still undergoing development, so options may change.";
 
 	//==============================================================================================
@@ -199,11 +199,14 @@ public class PdbUniversalAnalyzer extends AbstractAnalyzer {
 	private PdbReaderOptions pdbReaderOptions;
 	private PdbApplicatorOptions pdbApplicatorOptions;
 
+	// only try once per transaction due to extensive error logging which may get duplicated
+	private long lastTransactionId = -1;
+
 	//==============================================================================================
 	//==============================================================================================
 	public PdbUniversalAnalyzer() {
 		super(NAME, DESCRIPTION, AnalyzerType.BYTE_ANALYZER);
-		setPrototype();
+		//setPrototype();
 		setDefaultEnablement(DEFAULT_ENABLEMENT);
 		setPriority(AnalysisPriority.FORMAT_ANALYSIS.after());
 		setSupportsOneTimeAnalysis();
@@ -220,6 +223,18 @@ public class PdbUniversalAnalyzer extends AbstractAnalyzer {
 	@Override
 	public boolean added(Program program, AddressSetView set, TaskMonitor monitor, MessageLog log)
 			throws CancelledException {
+
+		// Only run once per transaction - avoid message duplication
+		long txId = program.getCurrentTransaction().getID();
+		if (txId == lastTransactionId) {
+			return false;
+		}
+		lastTransactionId = txId;
+
+		// Only run if restricted set corresponds to entire program
+		if (!set.contains(program.getMemory())) {
+			return false;
+		}
 
 // NOTE: Legacy PDB Analyzer currently yields to this analyzer if both are enabled
 //		if (PdbAnalyzer.isEnabled(program)) {
@@ -246,9 +261,10 @@ public class PdbUniversalAnalyzer extends AbstractAnalyzer {
 			Msg.info(this,
 				">> Clear 'PDB Loaded' program property or use Load PDB action if " +
 					"additional PDB processing required.");
+			return true;
 		}
-		if (programAttributes.isPdbLoaded() ||
-			failMissingFilename(programAttributes, log) ||
+
+		if (failMissingFilename(programAttributes, log) ||
 			failMissingAttributes(programAttributes, log)) {
 			return true;
 		}
