@@ -4262,11 +4262,7 @@ Datatype *ActionInferTypes::propagateAddIn2Out(TypeFactory *typegrp,PcodeOp *op,
   Datatype *tstruct = pt->getPtrTo();
   int4 offset = propagateAddPointer(op,inslot);
   if (offset==-1) return op->getOut()->getTempType(); // Doesn't look like a good pointer add
-  uintb uoffset = AddrSpace::addressToByte(offset,pt->getWordSize());
-  intb soffset = (intb) uoffset;
-  sign_extend(soffset, pt->getSize()*8-1);
-  if(pt->getShiftOffset() != 0 && soffset == -pt->getShiftOffset()) // Do we create an unshifted pointer?
-    return typegrp->getTypePointer(pt->getSize(),pt->getPtrTo(),pt->getWordSize());
+  uintb uoffset = AddrSpace::addressToByte(offset,((TypePointer *)rettype)->getWordSize());
   if (tstruct->getSize() > 0 && !tstruct->isVariableLength())
     uoffset = uoffset % tstruct->getSize();
   if (uoffset==0) {
