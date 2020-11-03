@@ -64,6 +64,7 @@ import ghidra.graph.job.GraphJobRunner;
 import ghidra.service.graph.*;
 import ghidra.util.*;
 import ghidra.util.exception.CancelledException;
+import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import resources.Icons;
 
@@ -80,7 +81,7 @@ public class DefaultGraphDisplay implements GraphDisplay {
 	Logger log = Logger.getLogger(DefaultGraphDisplay.class.getName());
 
 	private GraphDisplayListener listener = new DummyGraphDisplayListener();
-	private String description;
+	private String title;
 
 	/**
 	 * the {@link Graph} to visualize
@@ -128,10 +129,6 @@ public class DefaultGraphDisplay implements GraphDisplay {
 	 * provides graph displays for supplied graphs
 	 */
 	private final DefaultGraphDisplayProvider graphDisplayProvider;
-	/**
-	 *  a 'busy' dialog to show while the layout algorithm is working
-	 */
-	private LayoutWorkingDialog layoutWorkingDialog;
 	/**
 	 * the vertex that has been nominated to be 'focused' in the graph display and listing
 	 */
@@ -359,20 +356,6 @@ public class DefaultGraphDisplay implements GraphDisplay {
 				.onActionStateChanged((s, t) -> layoutChanged(s.getName()))
 				.addStates(getLayoutActionStates())
 				.buildAndInstallLocal(componentProvider);
-
-		// show a 'busy' dialog while the layout algorithm is computing vertex locations
-		viewer.getVisualizationModel()
-				.getLayoutModel()
-				.getLayoutStateChangeSupport()
-				.addLayoutStateChangeListener(
-					evt -> {
-						if (evt.active) {
-							Swing.runLater(this::showLayoutWorking);
-						}
-						else {
-							Swing.runLater(this::hideLayoutWorking);
-						}
-					});
 	}
 
 	private void createPopupActions() {
@@ -539,9 +522,7 @@ public class DefaultGraphDisplay implements GraphDisplay {
 				}
 			});
 			Set<AttributedVertex> selected = selectedVertexState.getSelected();
-			List<String> selectedIds =
-				selected.stream().map(AttributedVertex::getId).collect(Collectors.toList());
-			notifySelectionChanged(selectedIds);
+			notifySelectionChanged(selected);
 		}
 		finally {
 			switchableSelectionListener.setEnabled(true);
@@ -571,7 +552,8 @@ public class DefaultGraphDisplay implements GraphDisplay {
 	 */
 	private void layoutChanged(String layoutName) {
 		if (layoutTransitionManager != null) {
-			layoutTransitionManager.setLayout(layoutName);
+			new TaskLauncher(new SetLayoutTask(viewer, layoutTransitionManager, layoutName), null,
+				1000);
 		}
 	}
 
@@ -587,27 +569,6 @@ public class DefaultGraphDisplay implements GraphDisplay {
 			filterDialog = new FilterDialog(vertexFilters.getButtons(), edgeFilters.getButtons());
 		}
 		componentProvider.getTool().showDialog(filterDialog);
-	}
-
-	/**
-	 * show the 'busy' dialog indicating that the layout algorithm is working
-	 */
-	protected void showLayoutWorking() {
-		if (this.layoutWorkingDialog != null) {
-			layoutWorkingDialog.close();
-		}
-		this.layoutWorkingDialog =
-			new LayoutWorkingDialog(viewer.getVisualizationModel().getLayoutAlgorithm());
-		componentProvider.getTool().showDialog(layoutWorkingDialog);
-	}
-
-	/**
-	 * hide the 'busy' dialog for the layout algorithm work
-	 */
-	protected void hideLayoutWorking() {
-		if (this.layoutWorkingDialog != null) {
-			layoutWorkingDialog.close();
-		}
 	}
 
 	/**
@@ -716,17 +677,18 @@ public class DefaultGraphDisplay implements GraphDisplay {
 		setFocusedVertex(vertex, EventTrigger.API_CALL);
 	}
 
-	protected void setFocusedVertex(AttributedVertex vertex, EventTrigger eventTrigger) {
+	@Override
+	public void setFocusedVertex(AttributedVertex vertex, EventTrigger eventTrigger) {
 		boolean changed = this.focusedVertex != vertex;
 		this.focusedVertex = vertex;
 		if (focusedVertex != null) {
 			if (changed && eventTrigger != EventTrigger.INTERNAL_ONLY) {
-				notifyLocationFocusChanged(focusedVertex.getId());
+				notifyLocationFocusChanged(focusedVertex);
 			}
 			// make sure the vertex is visible, even if the vertex has not changed
 			scrollToSelected(focusedVertex);
-			viewer.repaint();
 		}
+		viewer.repaint();
 	}
 
 	/**
@@ -769,22 +731,22 @@ public class DefaultGraphDisplay implements GraphDisplay {
 
 	/**
 	 * fire an event to notify the selected vertices changed
-	 * @param vertexIds the list of vertexes
+	 * @param selected the list of selected vertices
 	 */
-	private void notifySelectionChanged(List<String> vertexIds) {
-		Swing.runLater(() -> listener.selectionChanged(vertexIds));
+	private void notifySelectionChanged(Set<AttributedVertex> selected) {
+		Swing.runLater(() -> listener.selectionChanged(selected));
 	}
 
 	/**
 	 * fire and event to say the focused vertex changed
-	 * @param vertexId the id of the focused vertex
+	 * @param vertex the new focused vertex
 	 */
-	private void notifyLocationFocusChanged(String vertexId) {
-		Swing.runLater(() -> listener.locationFocusChanged(vertexId));
+	private void notifyLocationFocusChanged(AttributedVertex vertex) {
+		Swing.runLater(() -> listener.locationFocusChanged(vertex));
 	}
 
 	@Override
-	public void selectVertices(List<String> vertexIdList, EventTrigger eventTrigger) {
+	public void selectVertices(Set<AttributedVertex> selected, EventTrigger eventTrigger) {
 		// if we are not to fire events, turn off the selection listener we provided to the
 		// graphing library.
 		switchableSelectionListener.setEnabled(eventTrigger != EventTrigger.INTERNAL_ONLY);
@@ -792,8 +754,7 @@ public class DefaultGraphDisplay implements GraphDisplay {
 		try {
 			MutableSelectedState<AttributedVertex> nodeSelectedState =
 				viewer.getSelectedVertexState();
-			Set<AttributedVertex> selected = getVertices(vertexIdList);
-			if (vertexIdList.isEmpty()) {
+			if (selected.isEmpty()) {
 				nodeSelectedState.clear();
 			}
 			else if (!Arrays.asList(nodeSelectedState.getSelectedObjects()).containsAll(selected)) {
@@ -809,30 +770,6 @@ public class DefaultGraphDisplay implements GraphDisplay {
 		}
 	}
 
-	/**
-	 *
-	 * @param vertexIds vertex ids of interest
-	 * @return a {@code Set} containing the {@code AttributedVertex} for ths supplied ids
-	 */
-	private Set<AttributedVertex> getVertices(Collection<String> vertexIds) {
-		Set<String> vertexSet = new HashSet<>(vertexIds);
-		return graph.vertexSet()
-				.stream()
-				.filter(v -> vertexSet.contains(v.getId()))
-				.collect(Collectors.toSet());
-	}
-
-	@Override
-	public void setLocationFocus(String vertexID, EventTrigger eventTrigger) {
-		Optional<AttributedVertex> vertexToFocus =
-			graph.vertexSet().stream().filter(v -> vertexID.equals(v.getId())).findFirst();
-		log.fine("picking address:" + vertexID + " returned " + vertexToFocus);
-		viewer.repaint();
-		vertexToFocus.ifPresent(v -> {
-			setFocusedVertex(v, eventTrigger);
-		});
-		viewer.repaint();
-	}
 
 	/**
 	 * set the {@link AttributedGraph} for visualization
@@ -955,20 +892,21 @@ public class DefaultGraphDisplay implements GraphDisplay {
 	/**
 	 * consume a {@link Graph} and display it
 	 * @param graph the graph to display or consume
-	 * @param description a description of the graph
+	 * @param title a title for the graph
 	 * @param append if true, append the new graph to any existing graph.
 	 * @param monitor a {@link TaskMonitor} which can be used to cancel the graphing operation
 	 */
 	@Override
-	public void setGraph(AttributedGraph graph, String description, boolean append,
+	public void setGraph(AttributedGraph graph, String title, boolean append,
 			TaskMonitor monitor) {
 		iconCache.clear();
 
-		if (append && Objects.equals(description, this.description) && this.graph != null) {
+		if (append && Objects.equals(title, this.title) && this.graph != null) {
 			graph = mergeGraphs(graph, this.graph);
 		}
 
-		this.description = description;
+		this.title = title;
+		componentProvider.setTitle(title);
 		int count = graph.getVertexCount();
 		if (count > MAX_NODES) {
 			Msg.showWarn(this, null, "Graph Not Rendered - Too many nodes!",
@@ -1066,32 +1004,20 @@ public class DefaultGraphDisplay implements GraphDisplay {
 	/**
 	 * process a request to update the name attribute value of the vertex with the
 	 * supplied id
-	 * @param id the vertix id
+	 * @param vertex the vertex to update
 	 * @param newName the new name of the vertex
 	 */
 	@Override
-	public void updateVertexName(String id, String newName) {
-		// find the vertex, if present, change the name
-		Optional<AttributedVertex> optional = graph.vertexSet()
-				.stream()
-				.filter(v -> v.getId().equals(id))
-				.findFirst();
-		if (optional.isPresent()) {
-			AttributedVertex vertex = optional.get();
-			vertex.setName(newName);
-			vertex.clearCache();
-			iconCache.evict(vertex);
-			viewer.repaint();
-		}
+	public void updateVertexName(AttributedVertex vertex, String newName) {
+		vertex.setName(newName);
+		vertex.clearCache();
+		iconCache.evict(vertex);
+		viewer.repaint();
 	}
 
-	/**
-	 *
-	 * @return a description of this graph
-	 */
 	@Override
-	public String getGraphDescription() {
-		return description;
+	public String getGraphTitle() {
+		return title;
 	}
 
 	/**
@@ -1225,8 +1151,7 @@ public class DefaultGraphDisplay implements GraphDisplay {
 			// vertices
 			if (e.getStateChange() == ItemEvent.SELECTED) {
 				Collection<AttributedVertex> selectedVertices = getVertices(e.getItem());
-				List<String> selectedVertexIds = toVertexIds(selectedVertices);
-				notifySelectionChanged(selectedVertexIds);
+				notifySelectionChanged(new HashSet<AttributedVertex>(selectedVertices));
 
 				if (selectedVertices.size() == 1) {
 					// if only one vertex was selected, make it the focused vertex
@@ -1239,7 +1164,7 @@ public class DefaultGraphDisplay implements GraphDisplay {
 				}
 			}
 			else if (e.getStateChange() == ItemEvent.DESELECTED) {
-				notifySelectionChanged(Collections.emptyList());
+				notifySelectionChanged(Collections.emptySet());
 			}
 			viewer.repaint();
 		}
@@ -1251,18 +1176,17 @@ public class DefaultGraphDisplay implements GraphDisplay {
 
 	@Override
 	public void addAction(DockingAction action) {
-		componentProvider.addLocalAction(action);
+		Swing.runLater(() -> componentProvider.addLocalAction(action));
 	}
 
 	@Override
-	public String getFocusedVertexId() {
-		return focusedVertex == null ? null : focusedVertex.getId();
+	public AttributedVertex getFocusedVertex() {
+		return focusedVertex;
 	}
 
 	@Override
-	public Set<String> getSelectedVertexIds() {
-		Set<AttributedVertex> selectedVertices = getSelectedVertices();
-		return selectedVertices.stream().map(v -> v.getId()).collect(Collectors.toSet());
+	public Set<AttributedVertex> getSelectedVertices() {
+		return viewer.getSelectedVertexState().getSelected();
 	}
 
 	public ActionContext getActionContext(MouseEvent e) {
@@ -1284,9 +1208,6 @@ public class DefaultGraphDisplay implements GraphDisplay {
 
 	}
 
-	private Set<AttributedVertex> getSelectedVertices() {
-		return viewer.getSelectedVertexState().getSelected();
-	}
 
 	/**
 	 * Use the hide selected action states to determine what vertices are shown:
@@ -1319,6 +1240,25 @@ public class DefaultGraphDisplay implements GraphDisplay {
 					.setVertexIncludePredicate(v -> true);
 		}
 		viewer.repaint();
+	}
+
+	@Override
+	public AttributedGraph getGraph() {
+		return graph;
+	}
+
+	/**
+	 * Removes all externally added actions. This is called before re-using the graph window for a
+	 * new graph which may add its own set of actions for that particular graph.
+	 */
+	void restoreToDefaultSetOfActions() {
+		Swing.runLater(() -> {
+			// remove all actions
+			componentProvider.removeAllLocalActions();
+			// put the standard graph actions back
+			createToolbarActions();
+			createPopupActions();
+		});
 	}
 
 }

@@ -153,17 +153,17 @@ public class BlockGraphTask extends Task {
 				display.setVertexLabel(CODE_ATTRIBUTE, GraphDisplay.ALIGN_LEFT, 12, true,
 					codeLimitPerBlock + 1);
 			}
-			display.setGraph(graph, actionName, appendGraph, monitor);
+			display.setGraph(graph, getDescription(), appendGraph, monitor);
 
 			if (location != null) {
 				// initialize the graph location, but don't have the graph send an event
-				String id = listener.getVertexIdForAddress(location.getAddress());
-				display.setLocationFocus(id, EventTrigger.INTERNAL_ONLY);
+				AttributedVertex vertex = listener.getVertex(location.getAddress());
+				display.setFocusedVertex(vertex, EventTrigger.INTERNAL_ONLY);
 			}
 			if (selection != null && !selection.isEmpty()) {
-				List<String> selectedVertices = listener.getVertices(selection);
+				Set<AttributedVertex> selectedVertices = listener.getVertices(selection);
 				if (selectedVertices != null) {
-					// intialize the graph selection, but don't have the graph send an event
+					// initialize the graph selection, but don't have the graph send an event
 					display.selectVertices(selectedVertices, EventTrigger.INTERNAL_ONLY);
 				}
 			}
@@ -173,6 +173,17 @@ public class BlockGraphTask extends Task {
 				Msg.showError(this, null, "Graphing Error", e.getMessage());
 			}
 		}
+	}
+
+	private String getDescription() {
+		String description = actionName;
+		if (selection != null && !selection.isEmpty()) {
+			description += ": " + selection.getMinAddress();
+		}
+		else {
+			description += " (Entire Program)";
+		}
+		return description;
 	}
 
 	/**
