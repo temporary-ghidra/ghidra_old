@@ -1845,6 +1845,7 @@ void PrintC::pushPartialSymbol(const Symbol *sym,int4 off,int4 sz,
       entry.fieldname = s.str();
       entry.field = (const TypeField *)0;
       entry.hilite = EmitXml::no_color;
+      finalcast = outtype;
       ct = (Datatype *)0;
     }
   }
