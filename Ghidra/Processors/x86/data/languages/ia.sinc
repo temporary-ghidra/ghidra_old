@@ -2141,13 +2141,13 @@ Suffix3D: imm8        is imm8 [ suffix3D=imm8; ] { }
 @endif
 
 :CBW            is vexMode=0 & opsize=0 & byte=0x98                 { AX = sext(AL); }
-:CWDE           is vexMode=0 & opsize=1 & byte=0x98                 { EAX = sext(AX); }
+:CWDE           is vexMode=0 & opsize=1 & byte=0x98 & check_EAX_dest { EAX = sext(AX); build check_EAX_dest;}
 @ifdef IA64
 :CDQE           is vexMode=0 & opsize=2 & byte=0x98                 { RAX = sext(EAX); }
 @endif
 
 :CWD            is vexMode=0 & opsize=0 & byte=0x99                 { tmp:4 = sext(AX); DX = tmp(2); }
-:CDQ            is vexMode=0 & opsize=1 & byte=0x99                 { tmp:8 = sext(EAX); EDX = tmp(4); }
+:CDQ            is vexMode=0 & opsize=1 & byte=0x99 & check_EDX_dest { tmp:8 = sext(EAX); EDX = tmp(4); build check_EDX_dest;}
 @ifdef IA64
 :CQO            is vexMode=0 & opsize=2 & byte=0x99                 { tmp:16 = sext(RAX); RDX = tmp(8); }
 @endif
@@ -2230,9 +2230,23 @@ define pcodeop clzero;
 :CMPXCHG rm16,Reg16    is vexMode=0 & opsize=0 & byte=0xf; byte=0xb1; rm16 & Reg16 ...  { subflags(AX,rm16); local tmp=AX-rm16; resultflags(tmp);
                                           local diff = rm16^Reg16; rm16 = rm16 ^ (zext(ZF) * diff);
                                           diff = AX ^ rm16; AX = AX ^ (zext(ZF==0) * diff); }
-:CMPXCHG rm32,Reg32    is vexMode=0 & opsize=1 & byte=0xf; byte=0xb1; rm32 & Reg32 ...  { subflags(EAX,rm32); local tmp=EAX-rm32; resultflags(tmp);
-                                          local diff = rm32^Reg32; rm32 = rm32 ^ (zext(ZF) * diff);
-                                          diff = EAX ^ rm32; EAX = EAX ^ (zext(ZF==0) * diff); }
+:CMPXCHG rm32,Reg32    is vexMode=0 & opsize=1 & byte=0xf; byte=0xb1; rm32 & Reg32 ... & check_EAX_dest ... & check_rm32_dest ... 
+{ 
+	#this instruction writes to either EAX or rm32
+	#in 64-bit mode, a 32-bit register that is written to 
+	#(and only the register that is written to) 
+	#must be zero-extended to 64 bits
+	subflags(EAX,rm32); 
+	local tmp=EAX-rm32; 
+	resultflags(tmp);  
+    if (ZF==1) goto <equal>;
+    EAX = rm32;
+    build check_EAX_dest;
+    goto inst_next;
+<equal>
+    rm32 = Reg32;
+    build check_rm32_dest;
+}
 @ifdef IA64
 :CMPXCHG rm64,Reg64    is vexMode=0 & opsize=2 & byte=0xf; byte=0xb1; rm64 & Reg64 ...  { subflags(RAX,rm64); local tmp=RAX-rm64; resultflags(tmp);
                                           local diff = rm64^Reg64; rm64 = rm64 ^ (zext(ZF) * diff);
@@ -2420,12 +2434,14 @@ define pcodeop cpuid_brand_part3_info;
                                                   AX = quotient:2;
                                                   local rem = tmp % rm16ext;
                                                   DX = rem:2; }
-:DIV rm32       is vexMode=0 & opsize=1 & byte=0xf7; rm32 & reg_opcode=6 ...    { rm32ext:8 = zext(rm32);
+:DIV rm32       is vexMode=0 & opsize=1 & byte=0xf7; rm32 & check_EDX_dest ... & check_EAX_dest ... & reg_opcode=6 ...    { rm32ext:8 = zext(rm32);
                                                   tmp:8 = (zext(EDX) << 32) | zext(EAX); # DE exception if quotient doesn't fit in EAX
                                                   local quotient = tmp / rm32ext;
                                                   EAX = quotient:4;
+                                                  build check_EAX_dest;
                                                   local rem = tmp % rm32ext;
-                                                  EDX = rem:4; }
+                                                  EDX = rem:4;
+                                                  build check_EDX_dest; }
 @ifdef IA64
 :DIV rm64       is vexMode=0 & opsize=2 & byte=0xf7; rm64 & reg_opcode=6 ...    { rm64ext:16 = zext(rm64);
                                                   tmp:16 = (zext(RDX) << 64) | zext(RAX); # DE exception if quotient doesn't fit in RAX
@@ -2678,12 +2694,14 @@ enterFrames: low5 is low5 { tmp:1 = low5; export tmp; }
                                                   AX = quotient:2;
                                                   local rem = tmp s% rm16ext;
                                                   DX = rem:2; }
-:IDIV rm32      is vexMode=0 & opsize=1 & byte=0xf7; rm32 & reg_opcode=7 ...    { rm32ext:8 = sext(rm32);
+:IDIV rm32      is vexMode=0 & opsize=1 & byte=0xf7; rm32 & check_EAX_dest ... & check_EDX_dest ... & reg_opcode=7 ...    { rm32ext:8 = sext(rm32);
                                                   tmp:8 = (zext(EDX) << 32) | zext(EAX); # DE exception if quotient doesn't fit in EAX
                                                   local quotient = tmp s/ rm32ext;
                                                   EAX = quotient:4;
+                                                  build check_EAX_dest;
                                                   local rem = tmp s% rm32ext;
-                                                  EDX = rem:4; }
+                                                  EDX = rem:4;
+                                                  build check_EDX_dest; }
 @ifdef IA64
 :IDIV rm64      is vexMode=0 & opsize=2 & byte=0xf7; rm64 & reg_opcode=7 ...    { rm64ext:16 = sext(rm64);
                                                   tmp:16 = (zext(RDX) << 64) | zext(RAX); # DE exception if quotient doesn't fit in RAX
