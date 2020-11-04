@@ -997,18 +997,22 @@ spec_rm64: "qword ptr "^Mem	is Mem				{ export *:8 Mem; }
 n1: "1"	is epsilon			{ tmp:1 = 1; export tmp; }
 
 @ifdef IA64
-# Handle sign extension in 64-bit mode for 32-bit destination registers
+# Handle zero extension in 64-bit mode for 32-bit destination registers
 check_Reg32_dest:	is bit64=1 & rexRprefix=0 & reg32 & reg64	{ reg64 = zext(reg32); }	
 check_Reg32_dest:	is bit64=1 & rexRprefix=1 & reg32_x & reg64_x	{ reg64_x = zext(reg32_x); }
 check_Rmr32_dest:	is bit64=1 & rexBprefix=0 & r32 & r64		{ r64 = zext(r32); }
 check_Rmr32_dest:	is bit64=1 & rexBprefix=1 & r32_x & r64_x 	{ r64_x = zext(r32_x); }
 check_rm32_dest:	is bit64=1 & mod=3 & check_Rmr32_dest		{ build check_Rmr32_dest; }
 check_EAX_dest:		is bit64=1									{ RAX = zext(EAX); }
+check_EDX_dest:     is bit64=1                                  { RDX = zext(EDX); }   
+check_vexVVVV_r32_dest: is bit64=1 & vexVVVV_r64 & vexVVVV_r32  { vexVVVV_r64 = zext(vexVVVV_r32);}
 @endif
 check_Reg32_dest:	is epsilon	{ }
 check_Rmr32_dest:	is epsilon	{ }
 check_rm32_dest:	is epsilon	{ }
 check_EAX_dest:		is epsilon  { }
+check_EDX_dest:		is epsilon  { }
+check_vexVVVV_r32_dest: is epsilon {  }
 
 ptr1616: reloc is protectedMode=0 & imm16; j16		[ reloc = j16*0x10 + imm16; ] { CS = j16; export *[ram]:4 reloc; }
 ptr1616: reloc is protectedMode=1 & imm16; j16		[ reloc = j16*0x10000 + imm16; ] { CS = j16; export *[ram]:4 reloc; }
@@ -2015,7 +2019,7 @@ Suffix3D: imm8        is imm8 [ suffix3D=imm8; ] { }
 
 :BTC Rmr16,Reg16	is vexMode=0 & opsize=0 & byte=0xf; byte=0xbb; mod=3 & Rmr16 & Reg16		{ local bit=Reg16&0xf; local val=(Rmr16>>bit)&1; Rmr16=Rmr16^(1<<bit); CF=(val!=0); }
 :BTC Mem,Reg16	is vexMode=0 & opsize=0 & byte=0xf; byte=0xbb; Mem & Reg16 ...		{ local ptr = Mem + (sext(Reg16) s>> 3); local bit=Reg16&7; local val = (*:1 ptr >> bit) & 1; *:1 ptr= *:1 ptr ^(1<<bit); CF=(val!=0); }
-:BTC Rmr32,Reg32	is vexMode=0 & opsize=1 & byte=0xf; byte=0xbb; mod=3 & Rmr32 & Reg32		{ local bit=Reg32&0x1f; local val=(Rmr32>>bit)&1; Rmr32=Rmr32^(1<<bit); CF=(val!=0); }
+:BTC Rmr32,Reg32	is vexMode=0 & opsize=1 & byte=0xf; byte=0xbb; mod=3 & Rmr32 & Reg32 & check_Rmr32_dest 		{ local bit=Reg32&0x1f; local val=(Rmr32>>bit)&1; CF=(val!=0); Rmr32=Rmr32^(1<<bit); build check_Rmr32_dest; }
 :BTC Mem,Reg32	is vexMode=0 & opsize=1 & byte=0xf; byte=0xbb; Mem & Reg32 ...		{
 @ifdef IA64
     local ptr = Mem + (sext(Reg32) s>> 3);
@@ -2032,14 +2036,14 @@ Suffix3D: imm8        is imm8 [ suffix3D=imm8; ] { }
 :BTC Mem,Reg64	is vexMode=0 & opsize=2 & byte=0xf; byte=0xbb; Mem & Reg64 ...		{ local ptr = Mem + (Reg64 s>> 3); local bit=Reg64&7; local val = (*:1 ptr >> bit) & 1; *:1 ptr = *:1 ptr ^ (1<<bit); CF = (val != 0); }
 @endif
 :BTC rm16,imm8     is vexMode=0 & opsize=0 & byte=0xf; byte=0xba; (rm16 & reg_opcode=7 ...); imm8   { local bit=imm8&0xf; local val=(rm16>>bit)&1; rm16=rm16^(1<<bit); CF=(val!=0); }
-:BTC rm32,imm8     is vexMode=0 & opsize=1 & byte=0xf; byte=0xba; (rm32 & reg_opcode=7 ...); imm8   { local bit=imm8&0x1f; local val=(rm32>>bit)&1; rm32=rm32^(1<<bit); CF=(val!=0); }
+:BTC rm32,imm8     is vexMode=0 & opsize=1 & byte=0xf; byte=0xba; (rm32 & check_rm32_dest ... & reg_opcode=7 ...); imm8   { local bit=imm8&0x1f; local val=(rm32>>bit)&1; CF=(val!=0); rm32=rm32^(1<<bit); build check_rm32_dest; }
 @ifdef IA64
 :BTC rm64,imm8     is vexMode=0 & opsize=2 & byte=0xf; byte=0xba; (rm64 & reg_opcode=7 ...); imm8   { local bit=imm8&0x3f; local val=(rm64>>bit)&1; rm64=rm64^(1<<bit); CF=(val!=0); }
 @endif
 
 :BTR Rmr16,Reg16	is vexMode=0 & opsize=0 & byte=0xf; byte=0xb3; mod=3 & Rmr16 & Reg16		{ local bit=Reg16&0xf; local val=(Rmr16>>bit)&1; Rmr16=Rmr16 & ~(1<<bit); CF=(val!=0); }
 :BTR Mem,Reg16	is vexMode=0 & opsize=0 & byte=0xf; byte=0xb3; Mem & Reg16 ...		{ local ptr = Mem + (sext(Reg16) s>> 3); local bit=Reg16&7; local val=(*:1 ptr >> bit) & 1; *:1 ptr = *:1 ptr & ~(1<<bit); CF = (val!=0); }
-:BTR Rmr32,Reg32	is vexMode=0 & opsize=1 & byte=0xf; byte=0xb3; mod=3 & Rmr32 & Reg32		{ local bit=Reg32&0x1f; local val=(Rmr32>>bit)&1; Rmr32=Rmr32 & ~(1<<bit); CF=(val!=0); }
+:BTR Rmr32,Reg32	is vexMode=0 & opsize=1 & byte=0xf; byte=0xb3; mod=3 & Rmr32 & check_Rmr32_dest & Reg32		{ local bit=Reg32&0x1f; local val=(Rmr32>>bit)&1; CF=(val!=0); Rmr32=Rmr32 & ~(1<<bit); build check_Rmr32_dest;  }
 :BTR Mem,Reg32	is vexMode=0 & opsize=1 & byte=0xf; byte=0xb3; Mem & Reg32 ...		{
 @ifdef IA64
     local ptr = Mem + (sext(Reg32) s>> 3);
@@ -2056,14 +2060,14 @@ Suffix3D: imm8        is imm8 [ suffix3D=imm8; ] { }
 :BTR Mem,Reg64	is vexMode=0 & opsize=2 & byte=0xf; byte=0xb3; Mem & Reg64 ...		{ local ptr = Mem + (Reg64 s>> 3); local bit = Reg64 & 7; local val = (*:1 ptr >> bit) & 1; *:1 ptr = *:1 ptr & ~(1<<bit); CF = (val!=0); }
 @endif
 :BTR rm16,imm8     is vexMode=0 & opsize=0 & byte=0xf; byte=0xba; (rm16 & reg_opcode=6 ...); imm8   { local bit=imm8&0xf; local val=(rm16>>bit)&1; rm16=rm16 & ~(1<<bit); CF=(val!=0); }
-:BTR rm32,imm8     is vexMode=0 & opsize=1 & byte=0xf; byte=0xba; (rm32 & reg_opcode=6 ...); imm8   { local bit=imm8&0x1f; local val=(rm32>>bit)&1; rm32=rm32 & ~(1<<bit); CF=(val!=0); }
+:BTR rm32,imm8     is vexMode=0 & opsize=1 & byte=0xf; byte=0xba; (rm32 & reg_opcode=6 ... & check_rm32_dest ...); imm8   { local bit=imm8&0x1f; local val=(rm32>>bit)&1; CF=(val!=0); rm32=rm32 & ~(1<<bit); build check_rm32_dest;  }
 @ifdef IA64
 :BTR rm64,imm8     is vexMode=0 & opsize=2 & byte=0xf; byte=0xba; (rm64 & reg_opcode=6 ...); imm8   { local bit=imm8&0x3f; local val=(rm64>>bit)&1; rm64=rm64 & ~(1<<bit); CF=(val!=0); }
 @endif
 
 :BTS Rmr16,Reg16	is vexMode=0 & opsize=0 & byte=0xf; byte=0xab; mod=3 & Rmr16 & Reg16		{ local bit=Reg16&0xf; local val=(Rmr16>>bit)&1; Rmr16=Rmr16 | (1<<bit); CF=(val!=0); }
 :BTS Mem,Reg16	is vexMode=0 & opsize=0 & byte=0xf; byte=0xab; Mem & Reg16 ...		{ local ptr = Mem + (sext(Reg16) s>> 3); local bit = Reg16&7; local val = (*:1 ptr >> bit) & 1; *:1 ptr = *:1 ptr | (1<<bit); CF = (val != 0); }
-:BTS Rmr32,Reg32	is vexMode=0 & opsize=1 & byte=0xf; byte=0xab; mod=3 & Rmr32 & Reg32		{ local bit=Reg32&0x1f; local val=(Rmr32>>bit)&1; Rmr32=Rmr32 | (1<<bit); CF=(val!=0); }
+:BTS Rmr32,Reg32	is vexMode=0 & opsize=1 & byte=0xf; byte=0xab; mod=3 & Rmr32 & check_Rmr32_dest & Reg32		{ local bit=Reg32&0x1f; local val=(Rmr32>>bit)&1; CF=(val!=0); Rmr32=Rmr32 | (1<<bit); build check_Rmr32_dest; }
 :BTS Mem,Reg32	is vexMode=0 & opsize=1 & byte=0xf; byte=0xab; Mem & Reg32 ...		{
 @ifdef IA64
     local ptr = Mem + (sext(Reg32) s>>3);
@@ -2080,7 +2084,7 @@ Suffix3D: imm8        is imm8 [ suffix3D=imm8; ] { }
 :BTS Mem,Reg64	is vexMode=0 & opsize=2 & byte=0xf; byte=0xab; Mem & Reg64 ...		{ local ptr = Mem + (Reg64 s>>3); local bit = Reg64 & 7; local val = (*:1 ptr >> bit) & 1; *:1 ptr = *:1 ptr | (1<<bit); CF = (val != 0); }
 @endif
 :BTS rm16,imm8     is vexMode=0 & opsize=0 & byte=0xf; byte=0xba; (rm16 & reg_opcode=5 ...); imm8   { local bit=imm8&0xf; local val=(rm16>>bit)&1; rm16=rm16 | (1<<bit); CF=(val!=0); }
-:BTS rm32,imm8     is vexMode=0 & opsize=1 & byte=0xf; byte=0xba; (rm32 & reg_opcode=5 ...); imm8   { local bit=imm8&0x1f; local val=(rm32>>bit)&1; rm32=rm32 | (1<<bit); CF=(val!=0); }
+:BTS rm32,imm8     is vexMode=0 & opsize=1 & byte=0xf; byte=0xba; (rm32 & reg_opcode=5 ... & check_rm32_dest ...); imm8   { local bit=imm8&0x1f; local val=(rm32>>bit)&1; CF=(val!=0); rm32=rm32 | (1<<bit); build check_rm32_dest;  }
 @ifdef IA64
 :BTS rm64,imm8     is vexMode=0 & opsize=2 & byte=0xf; byte=0xba; (rm64 & reg_opcode=5 ...); imm8   { local bit=imm8&0x3f; local val=(rm64>>bit)&1; rm64=rm64 | (1<<bit); CF=(val!=0); }
 @endif
