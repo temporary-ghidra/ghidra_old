@@ -2714,12 +2714,12 @@ enterFrames: low5 is low5 { tmp:1 = low5; export tmp; }
 :IMUL             rm8   is vexMode=0 & byte=0xf6; rm8 & reg_opcode=5 ...            { AX = sext(AL) * sext(rm8); imultflags(AL,AX); }    
 :IMUL            rm16   is vexMode=0 & opsize=0 & byte=0xf7; rm16 & reg_opcode=5 ...    { tmp:4 = sext(AX) * sext(rm16);
                                           DX = tmp(2); AX = tmp(0); imultflags(AX,tmp); }
-:IMUL            rm32   is vexMode=0 & opsize=1 & byte=0xf7; rm32 & reg_opcode=5 ...    { tmp:8 = sext(EAX) * sext(rm32);
-                                          EDX = tmp(4); EAX = tmp(0); imultflags(EAX,tmp); }
+:IMUL            rm32   is vexMode=0 & opsize=1 & byte=0xf7; rm32 & check_EAX_dest ... & check_EDX_dest ... & reg_opcode=5 ...    { tmp:8 = sext(EAX) * sext(rm32);
+                                          EDX = tmp(4); build check_EDX_dest; EAX = tmp(0); build check_EAX_dest; imultflags(EAX,tmp); }
 @ifdef IA64
 # We do a second multiply so emulator(s) that only have precision up to 64 bits will still get lower 64 bits correct
 :IMUL            rm64   is vexMode=0 & opsize=2 & byte=0xf7; rm64 & reg_opcode=5 ...    { tmp:16 = sext(RAX) * sext(rm64);
-                                          RDX = tmp(8); RAX = RAX * rm64; imultflags(RAX,tmp); }
+                                           RAX = RAX * rm64; RDX = tmp(8); imultflags(RAX,tmp); }
 @endif
 :IMUL      Reg16,rm16   is vexMode=0 & opsize=0 & byte=0xf; byte=0xaf; rm16 & Reg16 ... { tmp:4 = sext(Reg16) * sext(rm16);
                                           Reg16 = tmp(0); high:2 = tmp(2); imultflags(Reg16,tmp);}
@@ -2910,6 +2910,7 @@ enterFrames: low5 is low5 { tmp:1 = low5; export tmp; }
     Reg32 = addr32;
 	build check_Reg32_dest;
 }
+
 @ifdef IA64
 :LEA Reg16,addr64   is vexMode=0 & opsize=0 & addrsize=2 & byte=0x8D; addr64 & Reg16 ... { Reg16 = addr64(0); }
 :LEA Reg32,addr64   is vexMode=0 & opsize=1 & addrsize=2 & byte=0x8D; addr64 & Reg32 ... & check_Reg32_dest ... { 
@@ -3184,7 +3185,7 @@ define pcodeop swap_bytes;
 
 :MUL rm8        is vexMode=0 & byte=0xf6; rm8 & reg_opcode=4 ...            { AX=zext(AL)*zext(rm8); multflags(AH); }
 :MUL rm16       is vexMode=0 & opsize=0 & byte=0xf7; rm16 & reg_opcode=4 ...    { tmp:4=zext(AX)*zext(rm16); DX=tmp(2); AX=tmp(0); multflags(DX); }
-:MUL rm32       is vexMode=0 & opsize=1 & byte=0xf7; rm32 & reg_opcode=4 ...    { tmp:8=zext(EAX)*zext(rm32); EDX=tmp(4); EAX=tmp(0); multflags(EDX); }
+:MUL rm32       is vexMode=0 & opsize=1 & byte=0xf7; rm32 & check_EAX_dest ... & check_EDX_dest ... & reg_opcode=4 ...    { tmp:8=zext(EAX)*zext(rm32); EDX=tmp(4); build check_EDX_dest; multflags(EDX);  EAX=tmp(0); build check_EAX_dest;  }
 @ifdef IA64
 :MUL rm64       is vexMode=0 & opsize=2 & byte=0xf7; rm64 & reg_opcode=4 ...    { tmp:16=zext(RAX)*zext(rm64); RDX=tmp(8); RAX=tmp(0); multflags(RDX); }
 @endif
@@ -3196,7 +3197,7 @@ define pcodeop swap_bytes;
 
 :NEG rm8       is vexMode=0 & byte=0xf6; rm8 & reg_opcode=3 ...         { negflags(rm8);   rm8 =  -rm8; resultflags(rm8 ); }
 :NEG rm16      is vexMode=0 & opsize=0 & byte=0xf7; rm16 & reg_opcode=3 ... { negflags(rm16); rm16 = -rm16; resultflags(rm16); }
-:NEG rm32      is vexMode=0 & opsize=1 & byte=0xf7; rm32 & reg_opcode=3 ... { negflags(rm32); rm32 = -rm32; resultflags(rm32); }
+:NEG rm32      is vexMode=0 & opsize=1 & byte=0xf7; rm32 & check_rm32_dest ... & reg_opcode=3 ... { negflags(rm32); rm32 = -rm32; resultflags(rm32); build check_rm32_dest;}
 @ifdef IA64
 :NEG rm64      is vexMode=0 & opsize=2 & byte=0xf7; rm64 & reg_opcode=3 ... { negflags(rm64); rm64 = -rm64; resultflags(rm64); }
 @endif
@@ -3212,7 +3213,7 @@ define pcodeop swap_bytes;
 
 :NOT rm8       is vexMode=0 & byte=0xf6; rm8 & reg_opcode=2 ...         {  rm8 =  ~rm8; }
 :NOT rm16      is vexMode=0 & opsize=0 & byte=0xf7; rm16 & reg_opcode=2 ... { rm16 = ~rm16; }
-:NOT rm32      is vexMode=0 & opsize=1 & byte=0xf7; rm32 & reg_opcode=2 ... { rm32 = ~rm32; }
+:NOT rm32      is vexMode=0 & opsize=1 & byte=0xf7; rm32 & check_rm32_dest ... & reg_opcode=2 ... { rm32 = ~rm32; build check_rm32_dest;}
 @ifdef IA64
 :NOT rm64      is vexMode=0 & opsize=2 & byte=0xf7; rm64 & reg_opcode=2 ... { rm64 = ~rm64; }
 @endif
