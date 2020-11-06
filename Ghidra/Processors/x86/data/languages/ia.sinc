@@ -2700,7 +2700,7 @@ enterFrames: low5 is low5 { tmp:1 = low5; export tmp; }
                                                   EAX = quotient:4;
                                                   build check_EAX_dest;
                                                   local rem = tmp s% rm32ext;
-                                                  EDX = rem:4;
+                                                  EDX = rem:4; 
                                                   build check_EDX_dest; }
 @ifdef IA64
 :IDIV rm64      is vexMode=0 & opsize=2 & byte=0xf7; rm64 & reg_opcode=7 ...    { rm64ext:16 = sext(rm64);
